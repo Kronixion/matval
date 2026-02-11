@@ -1,0 +1,31 @@
+# Environment
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+venv/
+.venv/
+
+# Data
+*.jsonl
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+
+# IDE / tools
+.vscode/
+.idea/
+.claude/
+
+# Shelfwatch dev files
+shelfwatch/.env.network
+shelfwatch/uv.lock
+shelfwatch/simple_test.py
+shelfwatch/test_client_mcp.py
+shelfwatch/setup_firewall.sh
+shelfwatch/start_network_server.sh

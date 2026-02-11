@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "matval-pipeline"
+version = "0.1.0"
+description = "Shared Scrapy pipeline for Matval supermarket scrapers"
+requires-python = ">=3.11"
+dependencies = [
+    "psycopg[binary]>=3.0",
+    "itemadapter>=0.9",
+    "python-dotenv>=1.0.0",
+]

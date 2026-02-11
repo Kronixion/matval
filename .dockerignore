@@ -1,0 +1,14 @@
+**/.venv
+**/venv
+**/__pycache__
+**/*.pyc
+.git
+.env
+*.md
+shelfwatch/uv.lock
+shelfwatch/.env.network
+shelfwatch/setup_firewall.sh
+shelfwatch/start_network_server.sh
+shelfwatch/simple_test.py
+shelfwatch/test_client_mcp.py
+shelfwatch/client-config.json

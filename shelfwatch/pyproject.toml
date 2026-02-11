@@ -1,0 +1,25 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "shelfwatch"
+version = "0.1.0"
+description = "MCP server for querying supermarket food data from PostgreSQL"
+requires-python = ">=3.10"
+dependencies = [
+    "mcp",
+    "matval-pipeline",
+    "psycopg[binary]>=3.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.scripts]
+shelfwatch = "shelfwatch.server:main"
+
+[tool.uv]
+dev-dependencies = []
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/shelfwatch"]
+

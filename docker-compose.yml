@@ -1,0 +1,48 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: matval_postgres
+    env_file: .env
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./db/02-seed-stores.sql:/docker-entrypoint-initdb.d/02-seed-stores.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-supermarket_items}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  shelfwatch:
+    build:
+      context: .
+      dockerfile: shelfwatch/Dockerfile
+    container_name: matval_shelfwatch
+    env_file: .env
+    environment:
+      - SHELFWATCH_DB_HOST=postgres
+      - SHELFWATCH_DB_PORT=5432
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${SHELFWATCH_MCP_PORT:-8000}:8000"
+
+  scraper:
+    build:
+      context: .
+      dockerfile: scrape_supermarket_websites/Dockerfile
+    env_file: .env
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - scrape
+
+volumes:
+  pgdata:
