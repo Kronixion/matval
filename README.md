@@ -274,4 +274,53 @@ The scrapers read `POSTGRES_HOST=localhost` from `.env` by default, which works 
 
 The scrapers depend on each supermarket's internal APIs and frontend structure, both of which can change without notice. I aim to review and update the spiders **every three months** to keep them working. Typical breakage includes renamed API endpoints, changed JSON response shapes, rotated category slugs, and new anti-bot measures.
 
-## Improvements
+## Store-Agnostic Design
+
+While currently implemented for 5 Swedish supermarkets, **Matval is designed to be store-agnostic**. The shared `matval_pipeline` library provides a normalized data model that can accommodate stores from any country.
+
+To add a new store:
+1. Create a new Scrapy spider in `scrape_supermarket_websites/<store_name>/scraper/`
+2. Configure it to use `matval_pipeline.pipeline.PostgresPipeline`
+3. Set `STORE_NAME` in the spider's settings
+4. Run the scraper - the shared pipeline handles normalization and database operations
+
+No changes needed to the database schema or MCP server.
+
+## Planned Improvements
+
+### Optimize Product Retrieval
+**Problem:** Current tool design requires multiple MCP calls for complex queries, consuming tokens and adding latency.
+
+**Solution:** Add batch retrieval tools:
+- `batch_get_product_details(product_ids: list[int])` - Get multiple products in one call
+- `search_products_with_details(keyword, include_nutrition=True)` - Include full details in search results
+
+**Benefits:** Fewer API round-trips, lower token consumption, faster responses.
+
+### GUI for Non-Technical Users
+**Goal:** Make Matval accessible to anyone who wants to compare groceries, without requiring Docker/CLI knowledge.
+
+**Approach:** Web-based interface with chat UI, handles MCP server connection internally. Could be hosted or distributed as a simple installer.
+
+### Historical Price Tracking
+**Current state:** The database already tracks price/availability changes in `product_availability_history`.
+
+**Feature:** Expose this via:
+- MCP tool: `get_price_history(product_name, store_name, days=30)`
+- Visualizations showing price trends over time
+- Price drop alerts
+
+### Recipe Suggestions
+Given cuisine or meal type, suggest recipes using currently cheap/available ingredients. Requires integration with recipe APIs (Edamam, Spoonacular).
+
+### Allergen Filtering
+Normalize allergen data across stores and add filtering:
+- `search_products(exclude_allergens=["gluten", "dairy"])`
+- `find_allergen_free_alternatives(product_name, allergens=["nuts"])`
+
+### Automatic Ingredient Shopping
+**Challenge:** Swedish supermarkets don't provide public ordering APIs. Would require browser automation (Playwright/Selenium), which has legal/ToS concerns and detection risks.
+
+**Near-term:** Export shopping lists with product URLs. Users manually add to cart.
+
+**Long-term:** Explore automation if feasible, or seek partnerships for API access.

@@ -29,3 +29,6 @@ shelfwatch/simple_test.py
 shelfwatch/test_client_mcp.py
 shelfwatch/setup_firewall.sh
 shelfwatch/start_network_server.sh
+
+# Marketing materials
+posts/
