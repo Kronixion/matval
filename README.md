@@ -1,12 +1,12 @@
 # Matval
 
-Matval (_mat_ = food, _val_ = choice) scrapes product data from five Swedish supermarket websites and stores it in PostgreSQL. An MCP server called **Shelfwatch** exposes the data to AI assistants so you can ask natural-language questions like _"what's the cheapest oat milk?"_ or _"compare prices for chicken breast across stores"_.
+Matval (_mat_ = food, _val_ = choice) scrapes product data from five Swedish supermarket websites and stores it in PostgreSQL. An MCP server called **Shelfwatch** exposes the data to AI assistants so you can ask natural-language questions like _"which yogurt has the most protein?"_, _"is sourdough bread available at ICA?"_, _"show me all plant-based milk options"_, or _"compare prices for chicken breast across stores"_.
 
 ## Motivation
 
-I love cooking. For years my grocery routine was simple walk into the store, browse the aisles, fill the basket. Then I discovered online grocery shopping and something clicked. For the first time I could see every product a supermarket carried laid out on a screen, with prices, unit costs, and nutrition all in one place. But I also noticed a gap: every chain had its own website, its own layout, its own way of organising things. There was no single place to search across all of them, compare a product side by side, or ask a simple question like _"where is Greek yoghurt cheapest?"_
+I love cooking. For years my grocery routine was simple walk into the store, browse the aisles, fill the basket. Then I discovered online grocery shopping and something clicked. For the first time I could see every product a supermarket carried laid out on a screen, with prices, unit costs, and nutrition all in one place. But I also noticed a gap: every chain had its own website, its own layout, its own way of organising things. There was no single place to search across all of them, compare products side by side, or answer questions like _"which store has the highest-protein Greek yogurt?"_ or _"is that specialty ingredient actually in stock anywhere?"_
 
-So I built **Matval** Swedish for _food choice_ to fill that gap. Five scrapers pull product data from Coop, Hemkop, ICA, Mathem, and Willys into a shared PostgreSQL database. On top of that sits **Shelfwatch**, an MCP server that lets any AI assistant query the data conversationally. I can ask it to plan a week of meals within a budget, find the most protein-dense options under a certain price, or just compare the cost of the same basket across all five stores. What used to take half an hour of tabbing between websites now takes a single question and it has genuinely changed how I shop, cook, and eat.
+So I built **Matval** Swedish for _food choice_ to fill that gap. Five scrapers pull product data from Coop, Hemkop, ICA, Mathem, and Willys into a shared PostgreSQL database. On top of that sits **Shelfwatch**, an MCP server that lets any AI assistant query the data conversationally. I can ask it to find high-protein breakfast options, check which stores have a specific ingredient in stock, browse entire product categories I've never explored, plan meals around nutritional goals, or compare prices across stores. What used to take half an hour of tabbing between websites now takes a single question and it has genuinely changed how I shop, cook, and eat.
 
 ## Architecture
 
@@ -41,8 +41,8 @@ So I built **Matval** Swedish for _food choice_ to fill that gap. Five scrapers 
 |-----------|-------------|
 | **Scrapers** | Five independent Scrapy spiders — one per supermarket chain |
 | **matval_pipeline** | Shared library that normalises items and upserts them into PostgreSQL |
-| **PostgreSQL** | Stores products, prices, categories, units, nutrition (JSONB), and availability history |
-| **Shelfwatch** | MCP server with domain-specific tools for searching, comparing, and browsing the data |
+| **PostgreSQL** | Stores products, categories, nutrition (JSONB), availability status, prices, unit pricing, and historical changes |
+| **Shelfwatch** | MCP server with domain-specific tools for searching products, browsing categories, comparing nutrition and prices, checking availability |
 
 ## Quickstart
 
@@ -141,14 +141,44 @@ Shelfwatch exposes nine tools:
 | Tool | Description |
 |------|-------------|
 | `search_products` | Keyword search across all or a specific store |
-| `compare_prices` | Side-by-side price comparison for a product across stores |
-| `get_cheapest` | Find the lowest-priced items matching a keyword |
 | `get_categories` | List categories with product counts |
 | `get_products_in_category` | Browse products within a category |
-| `get_product_details` | Full product info — price, unit pricing, nutrition, availability |
+| `get_product_details` | Full product info — nutrition, availability, price, unit pricing |
 | `get_nutrition` | Nutrition data (JSONB) for a product |
 | `list_stores` | All stores with product counts and data freshness |
+| `compare_prices` | Side-by-side price comparison for a product across stores |
+| `get_cheapest` | Find the lowest-priced items matching a keyword |
 | `execute_query` | Raw SQL escape hatch for advanced queries |
+
+## Examples
+
+Ask Shelfwatch natural-language questions through your MCP client:
+
+### Nutrition & Product Discovery
+- _"Which brands of Greek yogurt have the most protein per 100g?"_
+- _"Show me all gluten-free bread options across all stores"_
+- _"Compare the fiber content of different breakfast cereals"_
+- _"What plant-based protein sources are available at ICA?"_
+
+### Availability & Stock
+- _"Is Risifrutti rice pudding in stock at Coop?"_
+- _"Which stores currently have sourdough bread available?"_
+- _"Show me all out-of-stock items at Willys"_
+
+### Category Browsing
+- _"What categories of products does Hemkop carry?"_
+- _"Show me everything in the 'Drycker' (beverages) category"_
+- _"List all cheese products at Mathem"_
+
+### Price Comparison
+- _"Where is oat milk cheapest?"_
+- _"Compare chicken breast prices across all five stores"_
+- _"Find the best value per kg for coffee beans"_
+
+### Meal Planning & Combined Queries
+- _"Find high-protein, low-sugar breakfast options under 30 kr"_
+- _"What are the cheapest sources of vitamin C?"_
+- _"Plan a week of vegetarian dinners using in-stock items at ICA"_
 
 ## Database Schema
 
@@ -243,3 +273,5 @@ The scrapers read `POSTGRES_HOST=localhost` from `.env` by default, which works 
 ## Maintenance
 
 The scrapers depend on each supermarket's internal APIs and frontend structure, both of which can change without notice. I aim to review and update the spiders **every three months** to keep them working. Typical breakage includes renamed API endpoints, changed JSON response shapes, rotated category slugs, and new anti-bot measures.
+
+## Improvements
