@@ -112,6 +112,35 @@ CREATE TABLE IF NOT EXISTS product_availability_history (
     recorded_at            TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Trigger: record old price/availability before updates
+CREATE OR REPLACE FUNCTION record_store_product_history()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO product_availability_history (
+        store_product_id,
+        availability_status_id,
+        price,
+        unit_price
+    ) VALUES (
+        OLD.store_product_id,
+        OLD.availability_status_id,
+        OLD.price,
+        OLD.unit_price
+    );
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_store_product_history
+    AFTER UPDATE ON store_products
+    FOR EACH ROW
+    WHEN (
+        OLD.price IS DISTINCT FROM NEW.price
+        OR OLD.unit_price IS DISTINCT FROM NEW.unit_price
+        OR OLD.availability_status_id IS DISTINCT FROM NEW.availability_status_id
+    )
+    EXECUTE FUNCTION record_store_product_history();
+
 -- Indexes to optimize lookups
 CREATE INDEX IF NOT EXISTS idx_categories_parent
     ON categories (parent_category_id);

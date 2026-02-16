@@ -136,7 +136,7 @@ All configuration is via environment variables in `.env`. Docker Compose passes 
 
 ## MCP Tools
 
-Shelfwatch exposes nine tools:
+Shelfwatch exposes ten tools:
 
 | Tool | Description |
 |------|-------------|
@@ -148,6 +148,7 @@ Shelfwatch exposes nine tools:
 | `list_stores` | All stores with product counts and data freshness |
 | `compare_prices` | Side-by-side price comparison for a product across stores |
 | `get_cheapest` | Find the lowest-priced items matching a keyword |
+| `get_price_history` | Price and availability change history for a product |
 | `execute_query` | Raw SQL escape hatch for advanced queries |
 
 ## Examples
@@ -203,7 +204,8 @@ matval/
 ├── .dockerignore
 ├── db/
 │   ├── schema.sql               # Full database schema
-│   └── 02-seed-stores.sql       # Pre-seed the 5 stores
+│   ├── 02-seed-stores.sql       # Pre-seed the 5 stores
+│   └── 03-history-trigger.sql   # Migration: price/availability tracking trigger
 ├── shelfwatch/
 │   ├── Dockerfile
 │   ├── pyproject.toml
@@ -303,10 +305,9 @@ No changes needed to the database schema or MCP server.
 **Approach:** Web-based interface with chat UI, handles MCP server connection internally. Could be hosted or distributed as a simple installer.
 
 ### Historical Price Tracking
-**Current state:** The database already tracks price/availability changes in `product_availability_history`.
+**Current state:** A database trigger on `store_products` automatically records price and availability changes in `product_availability_history` whenever a scraper run updates a product. The trigger fires on changes to `price`, `unit_price`, or `availability_status_id`, capturing the old values with a timestamp. The migration script (`db/03-history-trigger.sql`) can be applied to existing databases; new databases get the trigger via `schema.sql`.
 
-**Feature:** Expose this via:
-- MCP tool: `get_price_history(product_name, store_name, days=30)`
+**Next steps:**
 - Visualizations showing price trends over time
 - Price drop alerts
 

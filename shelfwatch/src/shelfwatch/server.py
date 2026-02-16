@@ -341,6 +341,41 @@ async def get_cheapest(keyword: str, limit: int = 10) -> list[dict[str, Any]]:
     return _rows_to_dicts(rows)
 
 
+@mcp.tool()
+async def get_price_history(product_name: str, store_name: str | None = None, days: int = 30) -> list[dict[str, Any]]:
+    """Get price and availability history for a product.
+
+    Returns historical price/availability changes recorded by the database
+    trigger whenever a scraper run detects a change. Each row shows the
+    previous price, unit price, and availability status before the change.
+    """
+
+    sql = """
+        SELECT p.name AS product_name, s.name AS store_name,
+               pah.price, pah.unit_price,
+               avs.name AS availability,
+               pah.recorded_at,
+               sp.price AS current_price, sp.unit_price AS current_unit_price
+        FROM product_availability_history pah
+        JOIN store_products sp ON sp.store_product_id = pah.store_product_id
+        JOIN products p ON p.product_id = sp.product_id
+        JOIN stores s ON s.store_id = sp.store_id
+        LEFT JOIN availability_statuses avs ON avs.availability_status_id = pah.availability_status_id
+        WHERE p.name ILIKE %s
+          AND pah.recorded_at >= NOW() - INTERVAL '%s days'
+    """
+    params: list[Any] = [f"%{product_name}%", days]
+
+    if store_name:
+        sql += " AND s.name = %s"
+        params.append(store_name.lower())
+
+    sql += " ORDER BY pah.recorded_at DESC"
+
+    rows = await _run_db_call(_connector.sql_query, sql, params)
+    return _rows_to_dicts(rows)
+
+
 # ---------------------------------------------------------------------------
 # Lifecycle & entrypoint
 # ---------------------------------------------------------------------------
