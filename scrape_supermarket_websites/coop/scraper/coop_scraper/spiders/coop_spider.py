@@ -139,14 +139,25 @@ class CoopSpider(scrapy.Spider):
         promotions = product.get("onlinePromotions") or []
         comparative_unit = product.get("comparativePriceUnit") or {}
 
+        # Price may be a flat number (legacy) or nested under salesPriceData/comparativePriceData.
+        price = product.get("salesPrice")
+        if price is None:
+            sales_data = product.get("salesPriceData") or product.get("piecePriceData") or {}
+            price = sales_data.get("b2cPrice")
+
+        unit_price = product.get("comparativePrice")
+        if unit_price is None:
+            comp_data = product.get("comparativePriceData") or {}
+            unit_price = comp_data.get("b2cPrice")
+
         return CoopItem(
             category=top_category,
             subcategory=subcategory,
             subcategory_slug=subcategory_slug,
             name=product.get("name"),
             url=self._build_product_url(product, slug),
-            price=product.get("salesPrice"),
-            unit_price=product.get("comparativePrice"),
+            price=price,
+            unit_price=unit_price,
             unit_quantity_name=comparative_unit.get("text"),
             unit_quantity_abbrev=comparative_unit.get("unit"),
             currency="SEK",
