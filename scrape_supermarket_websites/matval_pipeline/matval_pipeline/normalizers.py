@@ -1,5 +1,3 @@
-"""Data normalization helpers — extracted from seed_tables.py."""
-
 from __future__ import annotations
 
 from typing import Any
@@ -16,14 +14,14 @@ def normalize_float(value: Any) -> float | None:
     except ValueError:
         return None
 
-
+#Missing other currencies inside the map. Missing multiple SEK mappings (:-, :, KRONNOR)
 def normalize_currency(value: Any) -> str | None:
     if value is None:
         return None
     value_str = str(value).strip().upper()
     if len(value_str) == 3 and value_str.isalpha():
         return value_str
-    currency_map = {"KR": "SEK", "SEK": "SEK"}
+    currency_map = {"KR": "SEK", ":-": "SEK"}
     return currency_map.get(value_str)
 
 

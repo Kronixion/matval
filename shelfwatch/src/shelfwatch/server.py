@@ -104,19 +104,19 @@ async def execute_query(sql: str, params: Optional[Mapping[str, Any] | Iterable[
 
     Database schema (all in the public schema of supermarket_items):
 
-    stores (store_id BIGINT PK, name TEXT UNIQUE, created_at, updated_at)
+    supermarkets (supermarket_id BIGINT PK, name TEXT UNIQUE, created_at, updated_at)
     categories (category_id BIGINT PK, name TEXT, parent_category_id BIGINT FK->categories, UNIQUE(name, parent_category_id))
     products (product_id BIGINT PK, name TEXT, category_id BIGINT FK->categories, description TEXT, sku TEXT, UNIQUE(name, category_id))
     quantity_types (quantity_type_id BIGINT PK, name TEXT UNIQUE)
     units (unit_id BIGINT PK, name TEXT UNIQUE, abbreviation TEXT UNIQUE)
     availability_statuses (availability_status_id BIGINT PK, name TEXT UNIQUE, description TEXT)
     currencies (currency_code CHAR(3) PK, name TEXT)
-    store_products (store_product_id BIGINT PK, store_id FK->stores, product_id FK->products,
+    store_products (store_product_id BIGINT PK, supermarket_id FK->stores, product_id FK->products,
         external_store_sku TEXT, url TEXT, currency_code FK->currencies, price NUMERIC(12,2),
         unit_price NUMERIC(12,4), unit_quantity NUMERIC(12,4), unit_id FK->units,
         quantity_type_id FK->quantity_types, availability_status_id FK->availability_statuses,
         nutrition_raw JSONB, notes TEXT, first_seen_at TIMESTAMPTZ, last_seen_at TIMESTAMPTZ,
-        UNIQUE(store_id, product_id))
+        UNIQUE(supermarket_id, product_id))
     product_availability_history (history_id BIGINT PK, store_product_id FK->store_products,
         availability_status_id FK->availability_statuses, price NUMERIC(12,2), unit_price NUMERIC(12,4),
         recorded_at TIMESTAMPTZ)
@@ -142,7 +142,7 @@ async def search_products(keyword: str, store_name: str | None = None, limit: in
                c.name AS category, pc.name AS parent_category
         FROM store_products sp
         JOIN products p ON p.product_id = sp.product_id
-        JOIN stores s ON s.store_id = sp.store_id
+        JOIN supermarket_id s ON s.supermarket_id = sp.supermarket_id
         LEFT JOIN categories c ON c.category_id = p.category_id
         LEFT JOIN categories pc ON pc.category_id = c.parent_category_id
         WHERE p.name ILIKE %s
@@ -162,7 +162,7 @@ async def search_products(keyword: str, store_name: str | None = None, limit: in
 
 @mcp.tool()
 async def compare_prices(keyword: str) -> list[dict[str, Any]]:
-    """Compare prices for the same or similar products across all stores.
+    """Compare prices for the same or similar products across all supermarkets.
 
     Results are grouped by product name, showing each store's price.
     """
@@ -173,7 +173,7 @@ async def compare_prices(keyword: str) -> list[dict[str, Any]]:
                u.abbreviation AS unit_abbrev, sp.url
         FROM store_products sp
         JOIN products p ON p.product_id = sp.product_id
-        JOIN stores s ON s.store_id = sp.store_id
+        JOIN supermarkets s ON s.supermarket_id = sp.supermarket_id
         LEFT JOIN units u ON u.unit_id = sp.unit_id
         WHERE p.name ILIKE %s
         ORDER BY p.name, sp.price ASC NULLS LAST
@@ -193,7 +193,7 @@ async def get_categories(store_name: str | None = None) -> list[dict[str, Any]]:
                    COUNT(*) AS product_count
             FROM store_products sp
             JOIN products p ON p.product_id = sp.product_id
-            JOIN stores s ON s.store_id = sp.store_id
+            JOIN supermarket s ON s.supermarket_id = sp.supermarket_id
             JOIN categories c ON c.category_id = p.category_id
             LEFT JOIN categories pc ON pc.category_id = c.parent_category_id
             WHERE s.name = %s
@@ -226,7 +226,7 @@ async def get_products_in_category(category_name: str, store_name: str | None = 
                sp.price, sp.currency_code, sp.url
         FROM store_products sp
         JOIN products p ON p.product_id = sp.product_id
-        JOIN stores s ON s.store_id = sp.store_id
+        JOIN supermarkets s ON s.supermarket_id = sp.supermarket_id
         JOIN categories c ON c.category_id = p.category_id
         WHERE c.name ILIKE %s
     """
@@ -257,7 +257,7 @@ async def get_product_details(product_name: str, store_name: str | None = None) 
                sp.first_seen_at, sp.last_seen_at
         FROM store_products sp
         JOIN products p ON p.product_id = sp.product_id
-        JOIN stores s ON s.store_id = sp.store_id
+        JOIN supermarkets s ON s.supermarket_id = sp.supermarket_id
         LEFT JOIN categories c ON c.category_id = p.category_id
         LEFT JOIN categories pc ON pc.category_id = c.parent_category_id
         LEFT JOIN units u ON u.unit_id = sp.unit_id
@@ -286,7 +286,7 @@ async def get_nutrition(product_name: str, store_name: str | None = None) -> lis
                sp.nutrition_raw
         FROM store_products sp
         JOIN products p ON p.product_id = sp.product_id
-        JOIN stores s ON s.store_id = sp.store_id
+        JOIN supermarkets s ON s.supermarket_id = sp.supermarket_id
         WHERE p.name ILIKE %s AND sp.nutrition_raw IS NOT NULL
     """
     params: list[Any] = [f"%{product_name}%"]
@@ -302,8 +302,8 @@ async def get_nutrition(product_name: str, store_name: str | None = None) -> lis
 
 
 @mcp.tool()
-async def list_stores() -> list[dict[str, Any]]:
-    """List all stores with product counts and data freshness."""
+async def list_supermarkets() -> list[dict[str, Any]]:
+    """List all supermarkets with product counts and data freshness."""
 
     sql = """
         SELECT s.name AS store_name,
@@ -311,8 +311,8 @@ async def list_stores() -> list[dict[str, Any]]:
                MIN(sp.first_seen_at) AS earliest_data,
                MAX(sp.last_seen_at) AS latest_data
         FROM stores s
-        LEFT JOIN store_products sp ON sp.store_id = s.store_id
-        GROUP BY s.store_id, s.name
+        LEFT JOIN store_products sp ON sp.supermarket_id = s.supermarket_id
+        GROUP BY s.supermarket_id, s.name
         ORDER BY s.name
     """
 
@@ -330,7 +330,7 @@ async def get_cheapest(keyword: str, limit: int = 10) -> list[dict[str, Any]]:
                u.abbreviation AS unit_abbrev, sp.url
         FROM store_products sp
         JOIN products p ON p.product_id = sp.product_id
-        JOIN stores s ON s.store_id = sp.store_id
+        JOIN supermarkets s ON s.supermarket_id = sp.supermarket_id
         LEFT JOIN units u ON u.unit_id = sp.unit_id
         WHERE p.name ILIKE %s AND sp.price IS NOT NULL
         ORDER BY sp.price ASC
@@ -359,7 +359,7 @@ async def get_price_history(product_name: str, store_name: str | None = None, da
         FROM product_availability_history pah
         JOIN store_products sp ON sp.store_product_id = pah.store_product_id
         JOIN products p ON p.product_id = sp.product_id
-        JOIN stores s ON s.store_id = sp.store_id
+        JOIN supermarkets s ON s.supermarket_id = sp.supermarket_id
         LEFT JOIN availability_statuses avs ON avs.availability_status_id = pah.availability_status_id
         WHERE p.name ILIKE %s
           AND pah.recorded_at >= NOW() - INTERVAL '%s days'

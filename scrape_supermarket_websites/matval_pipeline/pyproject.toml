@@ -12,3 +12,8 @@ dependencies = [
     "itemadapter>=0.9",
     "python-dotenv>=1.0.0",
 ]
+
+dev = [
+    "pytest>=9.0",
+    "pytest-cov"
+]
