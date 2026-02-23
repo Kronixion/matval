@@ -26,6 +26,9 @@ class DBOps:
         self._lookup_cache: dict[tuple[str, str | None], int | None] = {}
         self._currency_seen: set[str] = set()
 
+    # Add get or create supermarket, whenever a spider is ran.
+    # It is a cleaner approach rather than seeding the database using docker-compose.
+
     # ------------------------------------------------------------------
     # Category
     # ------------------------------------------------------------------
