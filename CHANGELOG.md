@@ -1,0 +1,15 @@
+## v0.2.0 (2026-02-25)
+
+### Feat
+
+- Replaced requirements.txt with pyproject.toml. Added a root manifest.
+- Modified server.py to use supermarkets table and supermarkets_id column (matval_pipeline will be modified as well). The change from stores to supermarkets comes from the fact that there can be multiple store_locations for a supermarket. Noticed that tests are missing for everything which I will add, starting with normalizers (pytest and pytest-cov will be added). Noticed that format, lint and type hint checks are missing (ruff, mypy and pre-commit hooks shall be added).
+- Removed one update SQL Schema as it was redundant. Inside schema.sql the stores table is renamed to supermarkets, because a supermarket can have multiple store locations with their unqiue store_id (ex: ica, willys, hemkop) if they are not online stores such as mathem. Modified 02-seed-stores.sqlto seed-supermarkets.sql due to the table name change. Refactored the sql query to perform INSERTS with auto-incrementing id.
+- Added price/availability history trigger and MCP tool.
+- First commit.
+
+### Fix
+
+- Starting deslopification
+- Corrected the price extraction for the COOP scraper
+- Noticed that the DOWNLOAD_DELAY for willys and hemkop were set at 0.5 so I switched it at 10 for compliance with robots.txt
