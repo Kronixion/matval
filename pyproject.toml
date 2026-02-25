@@ -1,0 +1,85 @@
+[project]
+name = "matval"
+version = "0.1.0"
+requires-python = ">=3.13"
+description = "matval (food choice) is a supermarket item procurement and natural-language retrieval project"
+authors = [
+    {name = "Calin-Andrei Rasiga", email = "rasigacalin@gmail.com"}
+]
+
+[project.optional-dependencies]
+dev = ["ruff", "mypy", "pytest", "pytest-cov", "commitizen", "pre-commit"]
+
+[tool.ruff]
+
+#Global rules
+line-length = 100
+indent-width = 4
+target-version = "py313"
+
+exclude = [
+    ".git",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".venv",
+]
+
+#Linter
+
+[tool.ruff.lint]
+select = [
+    # Pycodestyle (PEP8 style)
+    "E",
+    # Pyflakes (Undefined names, unused imports)
+    "F",
+    # Pyupgrade (Modern Syntax)
+    "UP",
+    # Naming conventions (pep8)
+    "N",
+    # Import sorting (isort)
+    "I",
+    # Security (bandit)
+    "S",
+    # Detect print() statements
+    "T20",
+    # Pytest style
+    "PT"
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+docstring-code-line-length = "dynamic"
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+
+#Excluding scrapy as it is a third-party package as I don't know the code within it
+[[tool.mypy.overrides]]
+module = "scrapy.*"
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = [
+    "scrape_supermarket_websites/matval_pipeline/tests"
+]
+
+#These settings are kept as default, but they are subject to potential change
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = """
+    --cov=matval_pipeline
+    --cov-report=term-missing
+    --cov-fail-under=80
+    --cov-report=json:reports/coverage.json
+"""
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+version_provider = "pep621" # This tells commitizen to update the version at the top
+tag_format = "v$version"
+update_changelog_on_bump = true
