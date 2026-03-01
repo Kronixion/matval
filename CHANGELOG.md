@@ -1,3 +1,9 @@
+## v0.2.1 (2026-03-01)
+
+### Fix
+
+- Performed linting and formating checks and fixes on all files.
+
 ## v0.2.0 (2026-02-25)
 
 ### Feat
