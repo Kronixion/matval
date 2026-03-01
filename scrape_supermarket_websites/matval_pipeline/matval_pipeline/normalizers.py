@@ -14,7 +14,8 @@ def normalize_float(value: Any) -> float | None:
     except ValueError:
         return None
 
-#Missing other currencies inside the map. Missing multiple SEK mappings (:-, :, KRONNOR)
+
+# Missing other currencies inside the map. Missing multiple SEK mappings (:-, :, KRONNOR)
 def normalize_currency(value: Any) -> str | None:
     if value is None:
         return None

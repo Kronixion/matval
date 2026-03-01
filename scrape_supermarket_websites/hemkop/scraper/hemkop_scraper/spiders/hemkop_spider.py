@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Iterator, List, Optional, Set, Tuple
+from collections.abc import Iterator
 
 import scrapy
 from scrapy import Request
@@ -68,8 +68,7 @@ class HemkopSpider(scrapy.Spider):
 
     _HEADERS = {
         "User-Agent": (
-            "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:143.0) "
-            "Gecko/20100101 Firefox/143.0"
+            "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:143.0) Gecko/20100101 Firefox/143.0"
         ),
         "Accept": "application/json, text/plain, */*",
         "Accept-Language": "en-US,en;q=0.5",
@@ -79,8 +78,8 @@ class HemkopSpider(scrapy.Spider):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._queued_slugs: Set[str] = set()
-        self._seen_product_codes: Set[str] = set()
+        self._queued_slugs: set[str] = set()
+        self._seen_product_codes: set[str] = set()
 
     # ------------------------------------------------------------------
     # Entry point
@@ -94,9 +93,7 @@ class HemkopSpider(scrapy.Spider):
     # Category listing
     # ------------------------------------------------------------------
 
-    def _request_category(
-        self, full_slug: str, *, page: int = 0
-    ) -> Iterator[Request]:
+    def _request_category(self, full_slug: str, *, page: int = 0) -> Iterator[Request]:
         if page == 0:
             if full_slug in self._queued_slugs:
                 return
@@ -106,10 +103,7 @@ class HemkopSpider(scrapy.Spider):
         category_slug = parts[0]
         subcategory_slug = "/".join(parts[1:]) or None
 
-        url = (
-            f"https://www.hemkop.se/c/{full_slug}"
-            f"?page={page}&size={_PAGE_SIZE}&sort=topRated"
-        )
+        url = f"https://www.hemkop.se/c/{full_slug}?page={page}&size={_PAGE_SIZE}&sort=topRated"
         yield JsonRequest(
             url,
             headers=self._HEADERS,
@@ -127,7 +121,7 @@ class HemkopSpider(scrapy.Spider):
         response: Response,
         category_slug: str,
         full_slug: str,
-        subcategory_slug: Optional[str],
+        subcategory_slug: str | None,
     ) -> Iterator[Request]:
         try:
             data = response.json()
@@ -159,7 +153,10 @@ class HemkopSpider(scrapy.Spider):
                 continue
             self._seen_product_codes.add(code)
             yield from self._queue_product_detail(
-                category_slug, subcategory_slug, subcategory_name, product,
+                category_slug,
+                subcategory_slug,
+                subcategory_name,
+                product,
             )
 
         # --- pagination -----------------------------------------------
@@ -179,8 +176,8 @@ class HemkopSpider(scrapy.Spider):
     def _queue_product_detail(
         self,
         category_slug: str,
-        subcategory_slug: Optional[str],
-        subcategory_name: Optional[str],
+        subcategory_slug: str | None,
+        subcategory_name: str | None,
         product: dict,
     ) -> Iterator[Request]:
         code = product["code"]
@@ -202,21 +199,22 @@ class HemkopSpider(scrapy.Spider):
         self,
         response: Response,
         category_slug: str,
-        subcategory_slug: Optional[str],
-        subcategory_name: Optional[str],
+        subcategory_slug: str | None,
+        subcategory_name: str | None,
         listing_product: dict,
     ) -> Iterator[HemkopItem]:
         try:
             detail = response.json()
         except Exception:
-            self.logger.warning(
-                "Failed to parse detail for %s", listing_product.get("code")
-            )
+            self.logger.warning("Failed to parse detail for %s", listing_product.get("code"))
             detail = None
 
         item = self._build_item(
-            category_slug, subcategory_slug, subcategory_name,
-            listing_product, detail,
+            category_slug,
+            subcategory_slug,
+            subcategory_name,
+            listing_product,
+            detail,
         )
         if item:
             yield item
@@ -231,11 +229,11 @@ class HemkopSpider(scrapy.Spider):
     def _build_item(
         self,
         category_slug: str,
-        subcategory_slug: Optional[str],
-        subcategory_name: Optional[str],
-        listing: Optional[dict],
-        detail: Optional[dict],
-    ) -> Optional[HemkopItem]:
+        subcategory_slug: str | None,
+        subcategory_name: str | None,
+        listing: dict | None,
+        detail: dict | None,
+    ) -> HemkopItem | None:
         listing = listing or {}
         detail = detail or {}
 
@@ -249,9 +247,7 @@ class HemkopSpider(scrapy.Spider):
             price = listing.get("priceValue") or listing.get("price")
 
         unit_price = detail.get("comparePrice") or listing.get("comparePrice")
-        unit_name = (
-            detail.get("comparePriceUnit") or listing.get("comparePriceUnit")
-        )
+        unit_name = detail.get("comparePriceUnit") or listing.get("comparePriceUnit")
 
         availability = detail.get("outOfStock")
         if availability is None:
@@ -288,19 +284,15 @@ class HemkopSpider(scrapy.Spider):
         )
 
     @staticmethod
-    def _build_nutrition(detail: dict, listing: dict) -> Optional[dict]:
-        nutrition_description = (
-            detail.get("nutritionDescription")
-            or listing.get("nutritionDescription")
+    def _build_nutrition(detail: dict, listing: dict) -> dict | None:
+        nutrition_description = detail.get("nutritionDescription") or listing.get(
+            "nutritionDescription"
         )
-        fact_list = (
-            detail.get("nutritionsFactList")
-            or listing.get("nutritionsFactList")
-        )
+        fact_list = detail.get("nutritionsFactList") or listing.get("nutritionsFactList")
         nutrient_headers = detail.get("nutrientHeaders") or []
 
-        rows: List[dict] = []
-        seen: Set[Tuple[Optional[str], Optional[str], Optional[str]]] = set()
+        rows: list[dict] = []
+        seen: set[tuple[str | None, str | None, str | None]] = set()
 
         for entry in fact_list or []:
             key = (
@@ -310,12 +302,14 @@ class HemkopSpider(scrapy.Spider):
             )
             if key in seen:
                 continue
-            rows.append({
-                "type_code": entry.get("typeCode"),
-                "unit_code": entry.get("unitCode"),
-                "value": entry.get("value"),
-                "precision": entry.get("measurementPrecisionCode"),
-            })
+            rows.append(
+                {
+                    "type_code": entry.get("typeCode"),
+                    "unit_code": entry.get("unitCode"),
+                    "value": entry.get("value"),
+                    "precision": entry.get("measurementPrecisionCode"),
+                }
+            )
             seen.add(key)
 
         for header in nutrient_headers:
@@ -327,12 +321,14 @@ class HemkopSpider(scrapy.Spider):
                 )
                 if key in seen:
                     continue
-                rows.append({
-                    "type_code": nutrient.get("nutrientTypeCode"),
-                    "unit_code": nutrient.get("measurementUnitCode"),
-                    "value": nutrient.get("quantityContained"),
-                    "precision": nutrient.get("measurementPrecisionCode"),
-                })
+                rows.append(
+                    {
+                        "type_code": nutrient.get("nutrientTypeCode"),
+                        "unit_code": nutrient.get("measurementUnitCode"),
+                        "value": nutrient.get("quantityContained"),
+                        "precision": nutrient.get("measurementPrecisionCode"),
+                    }
+                )
                 seen.add(key)
 
         if not rows:

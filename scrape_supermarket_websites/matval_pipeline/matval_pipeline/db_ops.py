@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from psycopg import sql
+
 from .connector import PostgresConnector
 from .normalizers import normalize_availability, normalize_currency, normalize_float
 
@@ -102,18 +104,21 @@ class DBOps:
         if not id_column:
             raise ValueError(f"Lookup table '{table}' not registered in LOOKUP_ID_COLUMNS")
 
-        row = self._conn.sql_query(
-            f"""WITH ins AS (
-                    INSERT INTO {table} ({column}) VALUES (%s)
-                    ON CONFLICT ({column}) DO NOTHING
-                    RETURNING {id_column}
-                )
-                SELECT {id_column} FROM ins
-                UNION ALL
-                SELECT {id_column} FROM {table} WHERE {column} = %s
-                LIMIT 1""",
-            (value, value),
-        )
+        
+        query = sql.SQL("""WITH ins AS ( 
+                            INSERT INTO {table} ({column}) VALUES (%s)
+                            ON CONFLICT ({column}) DO NOTHING
+                            RETURNING {id_column}
+                        )
+                        SELECT {id_column} FROM ins
+                        UNION ALL
+                        SELECT {id_column} FROM {table} WHERE {column} = %s
+                        LIMIT 1""").format(
+                            table = sql.Identifier(table),
+                            column = sql.Identifier(column),
+                            id_column = sql.Identifier(id_column),
+                        )
+        row = self._conn.sql_query(query,(value, value),) 
         lid = int(row[0][id_column])
         self._lookup_cache[key] = lid
         return lid
@@ -155,7 +160,8 @@ class DBOps:
 
         with self._conn.cursor() as cur:
             cur.execute(
-                "INSERT INTO currencies (currency_code, name) VALUES (%s, %s) ON CONFLICT (currency_code) DO NOTHING",
+                "INSERT INTO currencies (currency_code, name) VALUES (%s, %s) \
+                    ON CONFLICT (currency_code) DO NOTHING",
                 (code, code),
             )
         self._currency_seen.add(code)

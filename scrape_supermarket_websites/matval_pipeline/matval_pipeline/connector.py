@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Iterator, Mapping, MutableMapping, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import Any, Iterable, Iterator, Mapping, MutableMapping, Optional, Sequence
+from typing import Any
 
 import psycopg
 from psycopg import Connection, Cursor
@@ -40,15 +41,15 @@ class PostgresConnector:
 
     def __init__(
         self,
-        config: Optional[PostgresConfig] = None,
+        config: PostgresConfig | None = None,
         *,
-        row_factory: Optional[RowFactory] = dict_row,
+        row_factory: RowFactory | None = dict_row,
         autocommit: bool = False,
     ) -> None:
         self._config = config or PostgresConfig()
         self._row_factory = row_factory
         self._autocommit = autocommit
-        self._connection: Optional[Connection[Any]] = None
+        self._connection: Connection[Any] | None = None
 
     @property
     def connection(self) -> Connection[Any]:
@@ -61,7 +62,7 @@ class PostgresConnector:
         if self._connection is not None and not self._connection.closed:
             self._connection.close()
 
-    def __enter__(self) -> "PostgresConnector":
+    def __enter__(self) -> PostgresConnector:
         return self
 
     def __exit__(self, exc_type, exc, tb) -> None:
@@ -70,7 +71,7 @@ class PostgresConnector:
         self.close()
 
     @contextmanager
-    def cursor(self, *, row_factory: Optional[RowFactory] = None) -> Iterator[Cursor[Any]]:
+    def cursor(self, *, row_factory: RowFactory | None = None) -> Iterator[Cursor[Any]]:
         factory = row_factory or self._row_factory
         with self.connection.cursor(row_factory=factory) as cur:
             yield cur
@@ -78,9 +79,9 @@ class PostgresConnector:
     def sql_query(
         self,
         sql: str,
-        params: Optional[Iterable[Any] | Mapping[str, Any]] = None,
+        params: Iterable[Any] | Mapping[str, Any] | None = None,
         *,
-        row_factory: Optional[RowFactory] = None,
+        row_factory: RowFactory | None = None,
     ) -> list[Any]:
         try:
             with self.cursor(row_factory=row_factory) as cur:
@@ -94,7 +95,7 @@ class PostgresConnector:
     def scalar_query(
         self,
         sql: str,
-        params: Optional[Iterable[Any] | Mapping[str, Any]] = None,
+        params: Iterable[Any] | Mapping[str, Any] | None = None,
     ) -> Any:
         try:
             with self.cursor() as cur:
@@ -115,7 +116,7 @@ class PostgresConnector:
     def non_sql_query(
         self,
         sql: str,
-        params: Optional[Iterable[Any] | Mapping[str, Any]] = None,
+        params: Iterable[Any] | Mapping[str, Any] | None = None,
     ) -> int:
         with self.cursor() as cur:
             cur.execute(sql, params)

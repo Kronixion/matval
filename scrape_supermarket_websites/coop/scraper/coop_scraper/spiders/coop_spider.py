@@ -13,8 +13,8 @@ import math
 import os
 import re
 import urllib.request
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Dict, Iterable, Optional
 
 import scrapy
 from scrapy import Request
@@ -61,7 +61,7 @@ class CoopSpider(scrapy.Spider):
         self.category_id_to_slug = {v: k for k, v in self.category_mapping.items()}
 
     @staticmethod
-    def _load_category_mapping() -> Dict[str, str]:
+    def _load_category_mapping() -> dict[str, str]:
         mapping_path = Path(__file__).resolve().parents[1] / "data" / "coop_category_ids.json"
         if not mapping_path.exists():
             raise FileNotFoundError(
@@ -130,7 +130,7 @@ class CoopSpider(scrapy.Spider):
                 cb_kwargs={"slug": slug, "category_id": category_id},
             )
 
-    def _build_item(self, slug: str, product: dict) -> Optional[CoopItem]:
+    def _build_item(self, slug: str, product: dict) -> CoopItem | None:
         if not product:
             return None
 
@@ -201,7 +201,9 @@ class CoopSpider(scrapy.Spider):
             "Referer": "https://www.coop.se/",
         }
 
-    def _resolve_categories(self, product: dict) -> tuple[Optional[str], Optional[str], Optional[str]]:
+    def _resolve_categories(
+        self, product: dict
+    ) -> tuple[str | None, str | None, str | None]:
         nav_categories = product.get("navCategories") or []
         if not nav_categories:
             return None, None, None
@@ -218,7 +220,7 @@ class CoopSpider(scrapy.Spider):
 
         return top_category_name, subcategory_name, subcategory_slug
 
-    def _extract_nutrition(self, product: dict) -> Optional[dict]:
+    def _extract_nutrition(self, product: dict) -> dict | None:
         nutrient_information = product.get("nutrientInformation") or []
         header_block = None
         for entry in nutrient_information:
@@ -233,7 +235,7 @@ class CoopSpider(scrapy.Spider):
                 continue
             description = link.get("description")
             amounts = link.get("amount") or []
-            amount_value: Optional[float | str] = None
+            amount_value: float | str | None = None
             if amounts:
                 candidate = amounts[0]
                 if isinstance(candidate, str):
@@ -263,7 +265,7 @@ class CoopSpider(scrapy.Spider):
         }
 
     @staticmethod
-    def _slugify(value: Optional[str]) -> Optional[str]:
+    def _slugify(value: str | None) -> str | None:
         if not value:
             return None
 
@@ -307,10 +309,15 @@ class CoopSpider(scrapy.Spider):
             },
         )
 
-        with urllib.request.urlopen(request) as response:
+        if not request.full_url.startswith("https://"):
+            raise ValueError("Only HTTPS URLs are premitted.")
+
+        with urllib.request.urlopen(request) as response: # noqa: S310 - URL is validated against https
             html = response.read().decode("utf-8", errors="ignore")
 
-        match = re.search(r'\"personalizationApiSubscriptionKey\"\s*:\s*\"([0-9a-fA-F]{32})\"', html)
+        match = re.search(
+            r"\"personalizationApiSubscriptionKey\"\s*:\s*\"([0-9a-fA-F]{32})\"", html
+        )
         if not match:
             raise ValueError(
                 "Unable to automatically determine Coop subscription key. "
@@ -320,7 +327,7 @@ class CoopSpider(scrapy.Spider):
         key = match.group(1)
         return key
 
-    def _build_product_url(self, product: dict, fallback_slug: str) -> Optional[str]:
+    def _build_product_url(self, product: dict, fallback_slug: str) -> str | None:
         url = product.get("url") or product.get("productUrl")
         if url:
             return url
@@ -330,6 +337,9 @@ class CoopSpider(scrapy.Spider):
         if not product_id or not name:
             return None
 
-        slug = self.category_id_to_slug.get(str(product.get("navCategories", [{}])[0].get("code"))) or fallback_slug
+        slug = (
+            self.category_id_to_slug.get(str(product.get("navCategories", [{}])[0].get("code")))
+            or fallback_slug
+        )
         sanitized_name = "-".join(name.lower().split())
         return f"https://www.coop.se/handla/varor{slug}/{sanitized_name}-{product_id}"

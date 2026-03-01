@@ -29,7 +29,7 @@ class PostgresPipeline:
     # ------------------------------------------------------------------
 
     @classmethod
-    def from_crawler(cls, crawler: Any) -> "PostgresPipeline":
+    def from_crawler(cls, crawler: Any) -> PostgresPipeline:
         store_name = crawler.settings.get("STORE_NAME")
         if not store_name:
             raise ValueError("STORE_NAME must be set in Scrapy settings")

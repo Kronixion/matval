@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import json
 import re
-from typing import Dict, Iterable, Iterator, List, Optional, Set, Tuple
+from collections.abc import Iterable, Iterator
+from urllib.parse import urljoin
 
 import scrapy
 from scrapy.http import JsonRequest, Response
-from urllib.parse import urljoin
 
 from mathem.items import MathemItem
 
@@ -32,7 +32,7 @@ class MathemSpider(scrapy.Spider):
         """Initialises the spider with bookkeeping for queued subcategories."""
 
         super().__init__(*args, **kwargs)
-        self._queued_subcategories: Set[Tuple[str, str]] = set()
+        self._queued_subcategories: set[tuple[str, str]] = set()
 
     def parse(self, response: Response) -> Iterator[scrapy.Request]:
         """Seed requests for every top-level category.
@@ -65,8 +65,8 @@ class MathemSpider(scrapy.Spider):
         response: Response,
         build_id: str,
         category_slug: str,
-        subcategory_slug: Optional[str] = None,
-        subcategory_name: Optional[str] = None,
+        subcategory_slug: str | None = None,
+        subcategory_name: str | None = None,
     ) -> Iterator[scrapy.Request]:
         """Process category JSON and schedule follow-up requests.
 
@@ -103,7 +103,7 @@ class MathemSpider(scrapy.Spider):
             subcategory_name,
         )
 
-    def parse_product(self, response: Response, meta: Dict[str, dict]):
+    def parse_product(self, response: Response, meta: dict[str, dict]):
         """Combine category data with detailed nutrition information.
 
         Args:
@@ -162,7 +162,7 @@ class MathemSpider(scrapy.Spider):
             Requests targeting each discovered subcategory JSON resource.
         """
 
-        discovered: Dict[str, str] = {}
+        discovered: dict[str, str] = {}
 
         for block in data.get("blocks", []):
             if block.get("component") == "page-header":
@@ -214,7 +214,7 @@ class MathemSpider(scrapy.Spider):
         build_id: str,
         category_slug: str,
         subcategory_slug: str,
-        subcategory_name: Optional[str],
+        subcategory_name: str | None,
     ) -> Iterator[scrapy.Request]:
         """Yield product detail requests for a subcategory, including pagination.
 
@@ -290,11 +290,11 @@ class MathemSpider(scrapy.Spider):
 
     def _parse_legacy_blocks(
         self,
-        blocks: List[dict],
+        blocks: list[dict],
         build_id: str,
         category_slug: str,
-        subcategory_slug: Optional[str],
-        subcategory_name: Optional[str],
+        subcategory_slug: str | None,
+        subcategory_name: str | None,
     ) -> Iterator[scrapy.Request]:
         """Handle legacy page structures that expose product grids directly.
 
@@ -342,9 +342,9 @@ class MathemSpider(scrapy.Spider):
         self,
         build_id: str,
         category_slug: str,
-        product: Optional[dict],
-        subcategory_slug: Optional[str],
-        subcategory_name: Optional[str],
+        product: dict | None,
+        subcategory_slug: str | None,
+        subcategory_name: str | None,
     ) -> Iterator[scrapy.Request]:
         """Generate a request for a product detail page.
 
@@ -396,8 +396,8 @@ class MathemSpider(scrapy.Spider):
         current_url: str,
         build_id: str,
         category_slug: str,
-        subcategory_slug: Optional[str],
-        subcategory_name: Optional[str],
+        subcategory_slug: str | None,
+        subcategory_name: str | None,
         cursor: str,
     ) -> Iterator[scrapy.Request]:
         """Queue the next paginated request for a subcategory listing.
@@ -436,9 +436,9 @@ class MathemSpider(scrapy.Spider):
     def _normalize_subcategory(
         self,
         category_slug: str,
-        uri: Optional[str],
-        title: Optional[str],
-    ) -> Tuple[Optional[str], Optional[str]]:
+        uri: str | None,
+        title: str | None,
+    ) -> tuple[str | None, str | None]:
         """Extract a usable slug and name from a subcategory URI.
 
         Args:
@@ -466,7 +466,7 @@ class MathemSpider(scrapy.Spider):
         name = title or relative
         return relative, name
 
-    def _extract_nutrition(self, detail: dict) -> Dict[str, str]:
+    def _extract_nutrition(self, detail: dict) -> dict[str, str]:
         if not isinstance(detail, dict):
             return {}
 
@@ -499,7 +499,7 @@ class MathemSpider(scrapy.Spider):
                 yield slug
 
     @staticmethod
-    def _default_category_slugs() -> List[str]:
+    def _default_category_slugs() -> list[str]:
         return [
             "1-frukt-gront",
             "78-mejeri-ost-juice",

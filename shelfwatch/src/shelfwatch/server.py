@@ -2,14 +2,17 @@
 
 from __future__ import annotations
 
-import asyncio, json, logging, os
+import asyncio
+import json
+import logging
+import os
+from collections.abc import Iterable, Mapping
 from functools import partial
-from typing import Any, Iterable, Mapping, Optional
+from typing import Any
 
 from dotenv import load_dotenv
-from mcp.server.fastmcp import FastMCP
 from matval_pipeline.connector import PostgresConfig, PostgresConnector
-
+from mcp.server.fastmcp import FastMCP
 
 _LOG = logging.getLogger(__name__)
 
@@ -80,7 +83,8 @@ if _port_raw:
 # Helper
 # ---------------------------------------------------------------------------
 
-def _normalize_params(params: Optional[Mapping[str, Any] | Iterable[Any]]) -> Optional[Any]:
+
+def _normalize_params(params: Mapping[str, Any] | Iterable[Any] | None) -> Any | None:
     if params is None:
         return None
     if isinstance(params, Mapping):
@@ -98,15 +102,20 @@ def _rows_to_dicts(rows: list[Any]) -> list[dict[str, Any]]:
 # Tools
 # ---------------------------------------------------------------------------
 
+
 @mcp.tool()
-async def execute_query(sql: str, params: Optional[Mapping[str, Any] | Iterable[Any]] = None) -> list[Mapping[str, Any]]:
+async def execute_query(
+    sql: str, params: Mapping[str, Any] | Iterable[Any] | None = None
+) -> list[Mapping[str, Any]]:
     """Execute a raw SQL query — escape hatch for complex queries not covered by the other tools.
 
     Database schema (all in the public schema of supermarket_items):
 
     supermarkets (supermarket_id BIGINT PK, name TEXT UNIQUE, created_at, updated_at)
-    categories (category_id BIGINT PK, name TEXT, parent_category_id BIGINT FK->categories, UNIQUE(name, parent_category_id))
-    products (product_id BIGINT PK, name TEXT, category_id BIGINT FK->categories, description TEXT, sku TEXT, UNIQUE(name, category_id))
+    categories (category_id BIGINT PK, name TEXT, parent_category_id \
+        BIGINT FK->categories, UNIQUE(name, parent_category_id))
+    products (product_id BIGINT PK, name TEXT, category_id BIGINT \
+        FK->categories, description TEXT, sku TEXT, UNIQUE(name, category_id))
     quantity_types (quantity_type_id BIGINT PK, name TEXT UNIQUE)
     units (unit_id BIGINT PK, name TEXT UNIQUE, abbreviation TEXT UNIQUE)
     availability_statuses (availability_status_id BIGINT PK, name TEXT UNIQUE, description TEXT)
@@ -118,7 +127,8 @@ async def execute_query(sql: str, params: Optional[Mapping[str, Any] | Iterable[
         nutrition_raw JSONB, notes TEXT, first_seen_at TIMESTAMPTZ, last_seen_at TIMESTAMPTZ,
         UNIQUE(supermarket_id, product_id))
     product_availability_history (history_id BIGINT PK, store_product_id FK->store_products,
-        availability_status_id FK->availability_statuses, price NUMERIC(12,2), unit_price NUMERIC(12,4),
+        availability_status_id FK->availability_statuses, \
+            price NUMERIC(12,2), unit_price NUMERIC(12,4),
         recorded_at TIMESTAMPTZ)
 
     Stores: coop(1), hemkop(2), ica(3), mathem(4), willys(5).
@@ -130,7 +140,9 @@ async def execute_query(sql: str, params: Optional[Mapping[str, Any] | Iterable[
 
 
 @mcp.tool()
-async def search_products(keyword: str, store_name: str | None = None, limit: int = 20) -> list[dict[str, Any]]:
+async def search_products(
+    keyword: str, store_name: str | None = None, limit: int = 20
+) -> list[dict[str, Any]]:
     """Search for products by keyword across all stores (or a specific store).
 
     Returns product name, store, price, URL, and category.
@@ -218,7 +230,9 @@ async def get_categories(store_name: str | None = None) -> list[dict[str, Any]]:
 
 
 @mcp.tool()
-async def get_products_in_category(category_name: str, store_name: str | None = None, limit: int = 50) -> list[dict[str, Any]]:
+async def get_products_in_category(
+    category_name: str, store_name: str | None = None, limit: int = 50
+) -> list[dict[str, Any]]:
     """Browse products in a category, optionally filtered by store."""
 
     sql = """
@@ -244,7 +258,9 @@ async def get_products_in_category(category_name: str, store_name: str | None = 
 
 
 @mcp.tool()
-async def get_product_details(product_name: str, store_name: str | None = None) -> list[dict[str, Any]]:
+async def get_product_details(
+    product_name: str, store_name: str | None = None
+) -> list[dict[str, Any]]:
     """Get full details for a product: price, unit pricing, nutrition, availability."""
 
     sql = """
@@ -259,10 +275,12 @@ async def get_product_details(product_name: str, store_name: str | None = None) 
         JOIN products p ON p.product_id = sp.product_id
         JOIN supermarkets s ON s.supermarket_id = sp.supermarket_id
         LEFT JOIN categories c ON c.category_id = p.category_id
-        LEFT JOIN categories pc ON pc.category_id = c.parent_category_id
+        LEFT JOIN categories pc ON pc.category_id = \
+            c.parent_category_id
         LEFT JOIN units u ON u.unit_id = sp.unit_id
         LEFT JOIN quantity_types qt ON qt.quantity_type_id = sp.quantity_type_id
-        LEFT JOIN availability_statuses avs ON avs.availability_status_id = sp.availability_status_id
+        LEFT JOIN availability_statuses avs ON avs.availability_status_id = \
+            sp.availability_status_id
         WHERE p.name ILIKE %s
     """
     params: list[Any] = [f"%{product_name}%"]
@@ -342,7 +360,9 @@ async def get_cheapest(keyword: str, limit: int = 10) -> list[dict[str, Any]]:
 
 
 @mcp.tool()
-async def get_price_history(product_name: str, store_name: str | None = None, days: int = 30) -> list[dict[str, Any]]:
+async def get_price_history(
+    product_name: str, store_name: str | None = None, days: int = 30
+) -> list[dict[str, Any]]:
     """Get price and availability history for a product.
 
     Returns historical price/availability changes recorded by the database
@@ -360,7 +380,8 @@ async def get_price_history(product_name: str, store_name: str | None = None, da
         JOIN store_products sp ON sp.store_product_id = pah.store_product_id
         JOIN products p ON p.product_id = sp.product_id
         JOIN supermarkets s ON s.supermarket_id = sp.supermarket_id
-        LEFT JOIN availability_statuses avs ON avs.availability_status_id = pah.availability_status_id
+        LEFT JOIN availability_statuses avs ON avs.availability_status_id = \
+            pah.availability_status_id
         WHERE p.name ILIKE %s
           AND pah.recorded_at >= NOW() - INTERVAL '%s days'
     """
@@ -380,6 +401,7 @@ async def get_price_history(product_name: str, store_name: str | None = None, da
 # Lifecycle & entrypoint
 # ---------------------------------------------------------------------------
 
+
 class ConnectorLifespan:
     async def __aenter__(self) -> None:
         return None
@@ -388,12 +410,15 @@ class ConnectorLifespan:
         _LOG.info("Closing Postgres connector")
         _connector.close()
 
+
 mcp.settings.lifespan = lambda _: ConnectorLifespan()
+
 
 def main() -> None:
     logging.basicConfig(level=os.getenv("SHELFWATCH_LOG_LEVEL", "INFO"))
     _LOG.info("Starting Shelfwatch MCP server")
     mcp.run(transport=_transport)
+
 
 __all__ = ["main"]
 
