@@ -1,3 +1,9 @@
+## v0.2.2 (2026-03-01)
+
+### Fix
+
+- Fixed several type hint issues, 156 left to go. Added workspaces to connect the isolated pyproject.toml to the main one.
+
 ## v0.2.1 (2026-03-01)
 
 ### Fix
