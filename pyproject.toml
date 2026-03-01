@@ -80,6 +80,7 @@ addopts = """
 
 [tool.commitizen]
 name = "cz_conventional_commits"
+tag = true
 version_provider = "pep621" # This tells commitizen to update the version at the top
 tag_format = "v$version"
 update_changelog_on_bump = true
