@@ -12,9 +12,6 @@ BOT_NAME = "willys"
 SPIDER_MODULES = ["willys.spiders"]
 NEWSPIDER_MODULE = "willys.spiders"
 
-ADDONS = {}
-
-
 USER_AGENT = "willys-bot (contact: you@example.com)"
 
 # Obey robots.txt rules

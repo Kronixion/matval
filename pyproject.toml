@@ -10,6 +10,16 @@ authors = [
 [project.optional-dependencies]
 dev = ["ruff", "mypy", "pytest", "pytest-cov", "commitizen", "pre-commit"]
 
+[tool.uv.workspace]
+members = [
+    "scrape_supermarket_websites/coop",
+    "scrape_supermarket_websites/hemkop",
+    "scrape_supermarket_websites/ica",
+    "scrape_supermarket_websites/mathem",
+    "scrape_supermarket_websites/matval_pipeline",
+    "scrape_supermarket_websites/willys",
+]
+
 [tool.ruff]
 
 #Global rules

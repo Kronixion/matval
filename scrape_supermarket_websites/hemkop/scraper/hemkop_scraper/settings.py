@@ -12,8 +12,6 @@ BOT_NAME = "hemkop"
 SPIDER_MODULES = ["hemkop_scraper.spiders"]
 NEWSPIDER_MODULE = "hemkop_scraper.spiders"
 
-ADDONS = {}
-
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 USER_AGENT = "hemkop-bot (contact: you@example.com)"

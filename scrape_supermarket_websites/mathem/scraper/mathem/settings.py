@@ -12,9 +12,6 @@ BOT_NAME = "mathem"
 SPIDER_MODULES = ["mathem.spiders"]
 NEWSPIDER_MODULE = "mathem.spiders"
 
-ADDONS = {}
-
-
 USER_AGENT = "mathem-bot (contact: you@example.com)"
 
 # Obey robots.txt rules

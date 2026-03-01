@@ -1,0 +1,12 @@
+pyproject.toml
+matval_pipeline/__init__.py
+matval_pipeline/config.py
+matval_pipeline/connector.py
+matval_pipeline/db_ops.py
+matval_pipeline/normalizers.py
+matval_pipeline/pipeline.py
+matval_pipeline.egg-info/PKG-INFO
+matval_pipeline.egg-info/SOURCES.txt
+matval_pipeline.egg-info/dependency_links.txt
+matval_pipeline.egg-info/requires.txt
+matval_pipeline.egg-info/top_level.txt
