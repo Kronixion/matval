@@ -1,3 +1,9 @@
+## v0.2.3 (2026-03-02)
+
+### Fix
+
+- Resolved multiple missing type hints, 115 to go.
+
 ## v0.2.2 (2026-03-01)
 
 ### Fix
