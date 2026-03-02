@@ -10,5 +10,5 @@ from scrapy import Item, Spider
 
 
 class WillysPipeline:
-    def process_item(self, item: Item, spider: Spider) -> Spider:
+    def process_item(self, item: Item, spider: Spider) -> Item:
         return item

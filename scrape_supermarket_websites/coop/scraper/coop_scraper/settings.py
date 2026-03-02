@@ -9,7 +9,7 @@ import os
 #     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
-BOT_NAME = "coop_scraper"
+BOT_NAME = "coop"
 
 SPIDER_MODULES = ["coop_scraper.spiders"]
 NEWSPIDER_MODULE = "coop_scraper.spiders"

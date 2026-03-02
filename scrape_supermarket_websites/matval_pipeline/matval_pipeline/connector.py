@@ -9,7 +9,7 @@ from typing import Any
 
 import psycopg
 from psycopg import Connection, Cursor
-from psycopg.rows import RowFactory, dict_row
+from psycopg.rows import DictRow, RowFactory, dict_row
 
 
 @dataclass(frozen=True, slots=True)
@@ -43,7 +43,7 @@ class PostgresConnector:
         self,
         config: PostgresConfig | None = None,
         *,
-        row_factory: RowFactory | None = dict_row,
+        row_factory: RowFactory[DictRow] = dict_row,
         autocommit: bool = False,
     ) -> None:
         self._config = config or PostgresConfig()

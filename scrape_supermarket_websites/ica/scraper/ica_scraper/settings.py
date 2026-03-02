@@ -7,12 +7,10 @@
 #     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
-BOT_NAME = "ica_scraper"
+BOT_NAME = "ica"
 
 SPIDER_MODULES = ["ica_scraper.spiders"]
 NEWSPIDER_MODULE = "ica_scraper.spiders"
-
-ADDONS = {}
 
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent

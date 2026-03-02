@@ -2,9 +2,13 @@
 #
 # See documentation in:
 # https://docs.scrapy.org/en/latest/topics/spider-middleware.html
-
 # useful for handling different item types with a single interface
-from scrapy import signals
+from collections.abc import AsyncGenerator, AsyncIterator, Generator
+from typing import Self
+
+from scrapy import Spider, signals
+from scrapy.crawler import Crawler
+from scrapy.http import Request, Response
 
 
 class WillysSpiderMiddleware:
@@ -13,40 +17,40 @@ class WillysSpiderMiddleware:
     # passed objects.
 
     @classmethod
-    def from_crawler(cls, crawler):
+    def from_crawler(cls, crawler: Crawler) -> Self:
         # This method is used by Scrapy to create your spiders.
         s = cls()
         crawler.signals.connect(s.spider_opened, signal=signals.spider_opened)
         return s
 
-    def process_spider_input(self, response, spider):
+    def process_spider_input(self, response: Response, spider: Spider) -> None:
         # Called for each response that goes through the spider
         # middleware and into the spider.
 
         # Should return None or raise an exception.
         return None
 
-    def process_spider_output(self, response, result, spider):
+    def process_spider_output(self, response: Response, result, spider: Spider) -> Generator:
         # Called with the results returned from the Spider, after
         # it has processed the response.
 
         # Must return an iterable of Request, or item objects.
         yield from result
 
-    def process_spider_exception(self, response, exception, spider):
+    def process_spider_exception(self, response: Response, exception: Exception, spider: Spider) -> None:
         # Called when a spider or process_spider_input() method
         # (from other spider middleware) raises an exception.
 
         # Should return either None or an iterable of Request or item objects.
         pass
 
-    async def process_start(self, start):
+    async def process_start(self, start: AsyncIterator) -> AsyncGenerator:
         # Called with an async iterator over the spider start() method or the
         # maching method of an earlier spider middleware.
         async for item_or_request in start:
             yield item_or_request
 
-    def spider_opened(self, spider):
+    def spider_opened(self, spider: Spider) -> None:
         spider.logger.info(f"Spider opened: {spider.name}")
 
 
@@ -56,13 +60,13 @@ class WillysDownloaderMiddleware:
     # passed objects.
 
     @classmethod
-    def from_crawler(cls, crawler):
+    def from_crawler(cls, crawler: Crawler) -> Self:
         # This method is used by Scrapy to create your spiders.
         s = cls()
         crawler.signals.connect(s.spider_opened, signal=signals.spider_opened)
         return s
 
-    def process_request(self, request, spider):
+    def process_request(self, request: Request, spider: Spider) -> None:
         # Called for each request that goes through the downloader
         # middleware.
 
@@ -74,7 +78,7 @@ class WillysDownloaderMiddleware:
         #   installed downloader middleware will be called
         return None
 
-    def process_response(self, request, response, spider):
+    def process_response(self, request: Request, response: Response, spider: Spider) -> Response:
         # Called with the response returned from the downloader.
 
         # Must either;
@@ -83,7 +87,7 @@ class WillysDownloaderMiddleware:
         # - or raise IgnoreRequest
         return response
 
-    def process_exception(self, request, exception, spider):
+    def process_exception(self, request: Request, exception: Exception, spider: Spider) -> None:
         # Called when a download handler or a process_request()
         # (from other downloader middleware) raises an exception.
 
@@ -93,5 +97,5 @@ class WillysDownloaderMiddleware:
         # - return a Request object: stops process_exception() chain
         pass
 
-    def spider_opened(self, spider):
+    def spider_opened(self, spider: Spider) -> None:
         spider.logger.info(f"Spider opened: {spider.name}")
