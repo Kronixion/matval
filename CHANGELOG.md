@@ -1,3 +1,9 @@
+## v0.2.4 (2026-03-04)
+
+### Fix
+
+- Fixed multiple type hints errors: 54 left.
+
 ## v0.2.3 (2026-03-02)
 
 ### Fix
