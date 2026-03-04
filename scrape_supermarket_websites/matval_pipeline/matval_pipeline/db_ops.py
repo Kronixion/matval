@@ -31,10 +31,6 @@ class DBOps:
     # Add get or create supermarket, whenever a spider is run.
     # It is a cleaner approach rather than seeding the database using docker-compose.
 
-    # ------------------------------------------------------------------
-    # Category
-    # ------------------------------------------------------------------
-
     def get_or_create_category(self, name: str | None, parent_name: str | None) -> int | None:
         if not name:
             return None
@@ -62,10 +58,6 @@ class DBOps:
         self._category_cache[key] = cat_id
         return cat_id
 
-    # ------------------------------------------------------------------
-    # Product
-    # ------------------------------------------------------------------
-
     def get_or_create_product(self, name: str, category_id: int | None) -> int:
         key = (name, category_id)
         if key in self._product_cache:
@@ -87,11 +79,7 @@ class DBOps:
         pid = int(row[0]["product_id"])
         self._product_cache[key] = pid
         return pid
-
-    # ------------------------------------------------------------------
-    # Lookup tables (quantity_types, availability_statuses)
-    # ------------------------------------------------------------------
-
+    
     def get_or_create_lookup(self, table: str, column: str, value: str | None) -> int | None:
         if value is None:
             return None
@@ -123,10 +111,6 @@ class DBOps:
         self._lookup_cache[key] = lid
         return lid
 
-    # ------------------------------------------------------------------
-    # Unit
-    # ------------------------------------------------------------------
-
     def get_or_create_unit(self, name: str, abbreviation: str) -> int:
         key = abbreviation
         if key in self._unit_cache:
@@ -148,10 +132,6 @@ class DBOps:
         self._unit_cache[key] = uid
         return uid
 
-    # ------------------------------------------------------------------
-    # Currency
-    # ------------------------------------------------------------------
-
     def ensure_currency(self, code: str | None) -> str | None:
         if code is None:
             return None
@@ -166,10 +146,6 @@ class DBOps:
             )
         self._currency_seen.add(code)
         return code
-
-    # ------------------------------------------------------------------
-    # Upsert store_product
-    # ------------------------------------------------------------------
 
     def upsert_store_product(
         self,

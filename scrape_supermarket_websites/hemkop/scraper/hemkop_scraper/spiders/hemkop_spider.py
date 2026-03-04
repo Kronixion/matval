@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
+from typing import Any
 
 import scrapy
 from scrapy import Request
-from scrapy.http import JsonRequest, Response
+from scrapy.http import JsonRequest, TextResponse
+from twisted.python.failure import Failure
 
 from hemkop_scraper.items import HemkopItem
 
@@ -76,22 +78,14 @@ class HemkopSpider(scrapy.Spider):
         "Referer": "https://www.hemkop.se/",
     }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self._queued_slugs: set[str] = set()
         self._seen_product_codes: set[str] = set()
 
-    # ------------------------------------------------------------------
-    # Entry point
-    # ------------------------------------------------------------------
-
     def start_requests(self) -> Iterator[Request]:
         for slug in _TOP_LEVEL_CATEGORIES:
             yield from self._request_category(slug)
-
-    # ------------------------------------------------------------------
-    # Category listing
-    # ------------------------------------------------------------------
 
     def _request_category(self, full_slug: str, *, page: int = 0) -> Iterator[Request]:
         if page == 0:
@@ -118,7 +112,7 @@ class HemkopSpider(scrapy.Spider):
 
     def parse_product_listing(
         self,
-        response: Response,
+        response: TextResponse,
         category_slug: str,
         full_slug: str,
         subcategory_slug: str | None,
@@ -166,19 +160,15 @@ class HemkopSpider(scrapy.Spider):
         if current_page + 1 < num_pages:
             yield from self._request_category(full_slug, page=current_page + 1)
 
-    def _handle_listing_error(self, failure):
+    def _handle_listing_error(self, failure: Failure) -> None:
         self.logger.warning("Listing request failed: %s", failure.value)
-
-    # ------------------------------------------------------------------
-    # Product detail
-    # ------------------------------------------------------------------
 
     def _queue_product_detail(
         self,
         category_slug: str,
         subcategory_slug: str | None,
         subcategory_name: str | None,
-        product: dict,
+        product: dict[str, Any],
     ) -> Iterator[Request]:
         code = product["code"]
         url = f"https://www.hemkop.se/axfood/rest/p/{code}?include=BREADCRUMB,NUTRIENTS"
@@ -197,11 +187,11 @@ class HemkopSpider(scrapy.Spider):
 
     def parse_product_detail(
         self,
-        response: Response,
+        response: TextResponse,
         category_slug: str,
         subcategory_slug: str | None,
         subcategory_name: str | None,
-        listing_product: dict,
+        listing_product: dict[str, Any],
     ) -> Iterator[HemkopItem]:
         try:
             detail = response.json()
@@ -219,20 +209,16 @@ class HemkopSpider(scrapy.Spider):
         if item:
             yield item
 
-    def _handle_detail_error(self, failure):
+    def _handle_detail_error(self, failure: Failure) -> None:
         self.logger.warning("Detail request failed: %s", failure.value)
-
-    # ------------------------------------------------------------------
-    # Item builder
-    # ------------------------------------------------------------------
 
     def _build_item(
         self,
         category_slug: str,
         subcategory_slug: str | None,
         subcategory_name: str | None,
-        listing: dict | None,
-        detail: dict | None,
+        listing: dict[str, Any] | None,
+        detail: dict[str, Any] | None,
     ) -> HemkopItem | None:
         listing = listing or {}
         detail = detail or {}
@@ -284,14 +270,14 @@ class HemkopSpider(scrapy.Spider):
         )
 
     @staticmethod
-    def _build_nutrition(detail: dict, listing: dict) -> dict | None:
+    def _build_nutrition(detail: dict[str, Any], listing: dict[str, Any]) -> dict[str, Any] | None:
         nutrition_description = detail.get("nutritionDescription") or listing.get(
             "nutritionDescription"
         )
         fact_list = detail.get("nutritionsFactList") or listing.get("nutritionsFactList")
         nutrient_headers = detail.get("nutrientHeaders") or []
 
-        rows: list[dict] = []
+        rows: list[dict[str, Any]] = []
         seen: set[tuple[str | None, str | None, str | None]] = set()
 
         for entry in fact_list or []:

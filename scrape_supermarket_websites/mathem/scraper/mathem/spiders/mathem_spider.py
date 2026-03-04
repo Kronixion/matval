@@ -5,10 +5,11 @@ from __future__ import annotations
 import json
 import re
 from collections.abc import Iterable, Iterator
+from typing import Any
 from urllib.parse import urljoin
 
 import scrapy
-from scrapy.http import JsonRequest, Response
+from scrapy.http import JsonRequest, Response, TextResponse
 
 from mathem.items import MathemItem
 
@@ -28,7 +29,7 @@ class MathemSpider(scrapy.Spider):
         "DOWNLOAD_DELAY": 0.5,
     }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialises the spider with bookkeeping for queued subcategories."""
 
         super().__init__(*args, **kwargs)
@@ -44,7 +45,7 @@ class MathemSpider(scrapy.Spider):
             Requests targeting each detected category JSON endpoint.
         """
 
-        build_data = json.loads(response.css("script#__NEXT_DATA__::text").get())
+        build_data = json.loads(response.css("script#__NEXT_DATA__::text").get(""))
         build_id = build_data["buildId"]
 
         categories = list(self._extract_category_slugs(response))
@@ -62,7 +63,7 @@ class MathemSpider(scrapy.Spider):
 
     def parse_category(
         self,
-        response: Response,
+        response: TextResponse,
         build_id: str,
         category_slug: str,
         subcategory_slug: str | None = None,
@@ -103,7 +104,7 @@ class MathemSpider(scrapy.Spider):
             subcategory_name,
         )
 
-    def parse_product(self, response: Response, meta: dict[str, dict]):
+    def parse_product(self, response: TextResponse, meta: dict[str, dict[str, Any]]) -> dict[str, Any]:
         """Combine category data with detailed nutrition information.
 
         Args:
@@ -146,7 +147,7 @@ class MathemSpider(scrapy.Spider):
     def _discover_subcategories(
         self,
         request_url: str,
-        data: dict,
+        data: dict[str, Any],
         build_id: str,
         category_slug: str,
     ) -> Iterator[scrapy.Request]:
@@ -171,14 +172,14 @@ class MathemSpider(scrapy.Spider):
                         uri = chip.get("target", {}).get("uri")
                         title = chip.get("title")
                         slug, name = self._normalize_subcategory(category_slug, uri, title)
-                        if slug and uri:
+                        if slug and uri and name:
                             discovered[uri] = name
 
         for section in data.get("sections", []):
             uri = section.get("uri")
             title = section.get("title")
             slug, name = self._normalize_subcategory(category_slug, uri, title)
-            if slug and uri:
+            if slug and uri and name:
                 discovered[uri] = name
 
         for page_entry in data.get("pages", []):
@@ -186,7 +187,7 @@ class MathemSpider(scrapy.Spider):
                 uri = section.get("uri")
                 title = section.get("title")
                 slug, name = self._normalize_subcategory(category_slug, uri, title)
-                if slug and uri:
+                if slug and uri and name:
                     discovered[uri] = name
 
         for uri, name in discovered.items():
@@ -210,7 +211,7 @@ class MathemSpider(scrapy.Spider):
     def _extract_subcategory_products(
         self,
         response: Response,
-        data: dict,
+        data: dict[str, Any],
         build_id: str,
         category_slug: str,
         subcategory_slug: str,
@@ -290,7 +291,7 @@ class MathemSpider(scrapy.Spider):
 
     def _parse_legacy_blocks(
         self,
-        blocks: list[dict],
+        blocks: list[dict[str, Any]],
         build_id: str,
         category_slug: str,
         subcategory_slug: str | None,
@@ -342,7 +343,7 @@ class MathemSpider(scrapy.Spider):
         self,
         build_id: str,
         category_slug: str,
-        product: dict | None,
+        product: dict[str, Any] | None,
         subcategory_slug: str | None,
         subcategory_name: str | None,
     ) -> Iterator[scrapy.Request]:
@@ -466,7 +467,7 @@ class MathemSpider(scrapy.Spider):
         name = title or relative
         return relative, name
 
-    def _extract_nutrition(self, detail: dict) -> dict[str, str]:
+    def _extract_nutrition(self, detail: dict[str, Any]) -> dict[str, str]:
         if not isinstance(detail, dict):
             return {}
 

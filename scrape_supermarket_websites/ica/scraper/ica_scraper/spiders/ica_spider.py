@@ -13,7 +13,7 @@ from typing import Any
 
 import scrapy
 from scrapy import Request
-from scrapy.http import Response
+from scrapy.http import Response, TextResponse
 
 from ica_scraper.items import ICAItem
 
@@ -133,7 +133,7 @@ class IcaSpider(scrapy.Spider):
         self,
         category_id: str,
         slug: str,
-        meta: dict,
+        meta: dict[str, Any],
         dont_filter: bool = False,
     ) -> Request:
         url = self.api_base.format(store_id=self.store_id)
@@ -155,7 +155,7 @@ class IcaSpider(scrapy.Spider):
     def _build_product_batch_request(
         self,
         product_ids: list[str],
-        category_chain: list[dict],
+        category_chain: list[dict[str, Any]],
     ) -> Request:
         url = self.put_base.format(store_id=self.store_id)
         self._maybe_refresh_session()
@@ -266,7 +266,7 @@ class IcaSpider(scrapy.Spider):
                 batch = remaining_ids[i : i + _BATCH_SIZE]
                 yield self._build_product_batch_request(batch, category_chain)
 
-    def parse_product_batch(self, response: Response) -> Iterable[Request | ICAItem]:
+    def parse_product_batch(self, response: TextResponse) -> Iterable[Request | ICAItem]:
         """Parse products returned by the PUT batch endpoint."""
         if response.status == 202:
             retries = response.meta.get("waf_retries", 0)
@@ -317,7 +317,7 @@ class IcaSpider(scrapy.Spider):
                 self._emitted_product_ids.add(pid)
                 yield item
 
-    def _build_item(self, product: dict, category_chain: list[dict[str, Any]]) -> ICAItem | None:
+    def _build_item(self, product: dict[str, Any], category_chain: list[dict[str, Any]]) -> ICAItem | None:
         product_id = product.get("productId")
         retailer_id = product.get("retailerProductId")
         name = product.get("name")
@@ -459,7 +459,7 @@ class IcaSpider(scrapy.Spider):
             self.logger.error("Failed to refresh session: %s", exc)
 
     @staticmethod
-    def _extract_price(price_info: dict) -> str | None:
+    def _extract_price(price_info: dict[str, Any]) -> str | None:
         if not price_info:
             return None
         # PUT endpoint: {"amount": "7.98", "currency": "SEK"}
@@ -471,7 +471,7 @@ class IcaSpider(scrapy.Spider):
 
     @staticmethod
     def _extract_unit_price(
-        price_info: dict, product: dict | None = None
+        price_info: dict[str, Any], product: dict[str, Any] | None = None
     ) -> tuple[str | None, str | None]:
         # GET endpoint: nested in price.unit.current
         unit_info = price_info.get("unit") if isinstance(price_info, dict) else None
@@ -488,7 +488,7 @@ class IcaSpider(scrapy.Spider):
         return None, None
 
     @staticmethod
-    def _extract_currency(price_info: dict) -> str | None:
+    def _extract_currency(price_info: dict[str, Any]) -> str | None:
         if not isinstance(price_info, dict):
             return None
         current = price_info.get("current")
