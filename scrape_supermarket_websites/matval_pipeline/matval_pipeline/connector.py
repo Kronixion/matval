@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Iterator, Mapping, MutableMapping, Sequence
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass, field
+from types import TracebackType
 from typing import Any
 
 import psycopg
-from psycopg import Connection, Cursor
+from psycopg import Connection, Cursor, Transaction
 from psycopg.rows import DictRow, RowFactory, dict_row
 
 
@@ -21,7 +22,7 @@ class PostgresConfig:
     dbname: str = "supermarket_items"
     user: str = "postgres"
     password: str = ""
-    options: MutableMapping[str, Any] = field(default_factory=dict)
+    options: dict[str, Any] = field(default_factory=dict)
 
     def to_connection_kwargs(self) -> Mapping[str, Any]:
         base: dict[str, Any] = {
@@ -65,7 +66,7 @@ class PostgresConnector:
     def __enter__(self) -> PostgresConnector:
         return self
 
-    def __exit__(self, exc_type, exc, tb) -> None:
+    def __exit__(self, exc_type: type[BaseException], exc: BaseException, tb: TracebackType) -> None:
         if exc and self._connection is not None and not self.connection.autocommit:
             self._connection.rollback()
         self.close()
@@ -79,7 +80,7 @@ class PostgresConnector:
     def sql_query(
         self,
         sql: str,
-        params: Iterable[Any] | Mapping[str, Any] | None = None,
+        params: Sequence[Any] | Mapping[str, Any] | None = None,
         *,
         row_factory: RowFactory | None = None,
     ) -> list[Any]:
@@ -95,7 +96,7 @@ class PostgresConnector:
     def scalar_query(
         self,
         sql: str,
-        params: Iterable[Any] | Mapping[str, Any] | None = None,
+        params: Sequence[Any] | Mapping[str, Any] | None = None,
     ) -> Any:
         try:
             with self.cursor() as cur:
@@ -116,7 +117,7 @@ class PostgresConnector:
     def non_sql_query(
         self,
         sql: str,
-        params: Iterable[Any] | Mapping[str, Any] | None = None,
+        params: Sequence[Any] | Mapping[str, Any] | None = None,
     ) -> int:
         with self.cursor() as cur:
             cur.execute(sql, params)
@@ -125,7 +126,7 @@ class PostgresConnector:
     def execute_many(
         self,
         sql: str,
-        param_list: Iterable[Iterable[Any] | Mapping[str, Any]],
+        param_list: Iterable[Sequence[Any] | Mapping[str, Any]],
     ) -> int:
         with self.cursor() as cur:
             cur.executemany(sql, param_list)
@@ -139,7 +140,7 @@ class PostgresConnector:
         return True
 
     @contextmanager
-    def transaction(self) -> Iterator[Connection[Any]]:
+    def transaction(self) -> Iterator[Transaction]:
         with self.connection.transaction() as tx:
             yield tx
 

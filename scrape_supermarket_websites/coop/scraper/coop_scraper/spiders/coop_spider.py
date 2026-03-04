@@ -15,10 +15,11 @@ import re
 import urllib.request
 from collections.abc import Iterable
 from pathlib import Path
+from typing import Any
 
 import scrapy
 from scrapy import Request
-from scrapy.http import JsonRequest, Response
+from scrapy.http import JsonRequest, TextResponse
 
 from coop_scraper.items import CoopItem
 
@@ -54,7 +55,7 @@ class CoopSpider(scrapy.Spider):
         },
     }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.subscription_key = kwargs.get("subscription_key")
         self.category_mapping = self._load_category_mapping()
@@ -96,10 +97,10 @@ class CoopSpider(scrapy.Spider):
 
     def parse_listing(
         self,
-        response: Response,
+        response: TextResponse,
         slug: str,
         category_id: str,
-    ) -> Iterable[Request]:
+    ) -> Iterable[CoopItem | Request]:
         data = response.json()
         results = data.get("results") or {}
         items = results.get("items") or results.get("results") or []
@@ -130,7 +131,7 @@ class CoopSpider(scrapy.Spider):
                 cb_kwargs={"slug": slug, "category_id": category_id},
             )
 
-    def _build_item(self, slug: str, product: dict) -> CoopItem | None:
+    def _build_item(self, slug: str, product: dict[str, Any]) -> CoopItem | None:
         if not product:
             return None
 
@@ -169,7 +170,7 @@ class CoopSpider(scrapy.Spider):
             promotions=promotions,
         )
 
-    def _build_payload(self, slug: str, category_id: str, skip: int) -> dict:
+    def _build_payload(self, slug: str, category_id: str, skip: int) -> dict[str, Any]:
         return {
             "attribute": {"name": "categoryIds", "value": category_id},
             "requestAlias": {
@@ -192,7 +193,7 @@ class CoopSpider(scrapy.Spider):
             f"&device={self.device}&direct=false"
         )
 
-    def _personalization_headers(self) -> dict:
+    def _personalization_headers(self) -> dict[str, Any]:
         return {
             "Accept": "application/json, text/plain, */*",
             "Content-Type": "application/json",
@@ -202,7 +203,7 @@ class CoopSpider(scrapy.Spider):
         }
 
     def _resolve_categories(
-        self, product: dict
+        self, product: dict[str, Any]
     ) -> tuple[str | None, str | None, str | None]:
         nav_categories = product.get("navCategories") or []
         if not nav_categories:
@@ -220,7 +221,7 @@ class CoopSpider(scrapy.Spider):
 
         return top_category_name, subcategory_name, subcategory_slug
 
-    def _extract_nutrition(self, product: dict) -> dict | None:
+    def _extract_nutrition(self, product: dict[str, Any]) -> dict[str, Any] | None:
         nutrient_information = product.get("nutrientInformation") or []
         header_block = None
         for entry in nutrient_information:
@@ -229,7 +230,7 @@ class CoopSpider(scrapy.Spider):
                 break
 
         nutrient_links = product.get("nutrientLinks") or []
-        values: list[dict] = []
+        values: list[dict[str, Any]] = []
         for link in nutrient_links:
             if not isinstance(link, dict):
                 continue
@@ -281,12 +282,12 @@ class CoopSpider(scrapy.Spider):
         if crawler:
             cached = getattr(crawler.engine, "_coop_subscription_key", None)
             if cached:
-                return cached
+                return str(cached)
 
             configured = crawler.settings.get("COOP_SUBSCRIPTION_KEY")
             if configured:
                 crawler.engine._coop_subscription_key = configured
-                return configured
+                return str(configured)
 
         env_key = os.environ.get("COOP_SUBSCRIPTION_KEY")
         if env_key:
@@ -327,10 +328,10 @@ class CoopSpider(scrapy.Spider):
         key = match.group(1)
         return key
 
-    def _build_product_url(self, product: dict, fallback_slug: str) -> str | None:
+    def _build_product_url(self, product: dict[str, Any], fallback_slug: str) -> str | None:
         url = product.get("url") or product.get("productUrl")
         if url:
-            return url
+            return str(url)
 
         product_id = product.get("id")
         name = product.get("name") or ""

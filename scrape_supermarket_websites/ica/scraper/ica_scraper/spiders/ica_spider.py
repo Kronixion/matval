@@ -9,6 +9,7 @@ import unicodedata
 from collections.abc import Iterable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
+from typing import Any
 
 import scrapy
 from scrapy import Request
@@ -101,7 +102,7 @@ class IcaSpider(scrapy.Spider):
         CategorySeed("331db70a-9d3f-4574-96fc-3543d7149a57", "Tobak", "Tobak"),
     ]
 
-    def __init__(self, *args, store_id: str | None = None, **kwargs):
+    def __init__(self, *args: Any, store_id: str | None = None, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.store_id = store_id or self.store_id_default
         self._visited_categories: set[str] = set()
@@ -110,10 +111,6 @@ class IcaSpider(scrapy.Spider):
         self._csrf_token: str | None = None
         self._session_cookies: dict[str, str] = {}
         self._token_obtained_at: float = 0
-
-    # ------------------------------------------------------------------
-    # Entry point
-    # ------------------------------------------------------------------
 
     def start_requests(self) -> Iterable[Request]:
         self._refresh_session()
@@ -131,10 +128,6 @@ class IcaSpider(scrapy.Spider):
                 ],
             }
             yield self._build_category_request(seed.identifier, slug, meta)
-
-    # ------------------------------------------------------------------
-    # Request builders
-    # ------------------------------------------------------------------
 
     def _build_category_request(
         self,
@@ -195,10 +188,6 @@ class IcaSpider(scrapy.Spider):
         if self._waf_token:
             cookies["aws-waf-token"] = self._waf_token
         return cookies
-
-    # ------------------------------------------------------------------
-    # Parsers
-    # ------------------------------------------------------------------
 
     def parse_category(self, response: Response) -> Iterable[Request | ICAItem]:
         # Detect WAF block and refresh
@@ -328,11 +317,7 @@ class IcaSpider(scrapy.Spider):
                 self._emitted_product_ids.add(pid)
                 yield item
 
-    # ------------------------------------------------------------------
-    # Item builder
-    # ------------------------------------------------------------------
-
-    def _build_item(self, product: dict, category_chain: list[dict]) -> ICAItem | None:
+    def _build_item(self, product: dict, category_chain: list[dict[str, Any]]) -> ICAItem | None:
         product_id = product.get("productId")
         retailer_id = product.get("retailerProductId")
         name = product.get("name")
@@ -377,10 +362,6 @@ class IcaSpider(scrapy.Spider):
             ean=product.get("ean"),
             promotions=product.get("offers") or [],
         )
-
-    # ------------------------------------------------------------------
-    # Session / WAF management
-    # ------------------------------------------------------------------
 
     def _maybe_refresh_session(self) -> None:
         """Proactively refresh session if the WAF token is about to expire."""
@@ -476,10 +457,6 @@ class IcaSpider(scrapy.Spider):
 
         except Exception as exc:
             self.logger.error("Failed to refresh session: %s", exc)
-
-    # ------------------------------------------------------------------
-    # Price / field extraction helpers
-    # ------------------------------------------------------------------
 
     @staticmethod
     def _extract_price(price_info: dict) -> str | None:

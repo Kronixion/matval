@@ -4,7 +4,7 @@
 # https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 # useful for handling different item types with a single interface
 from collections.abc import AsyncGenerator, AsyncIterator, Generator
-from typing import Self
+from typing import Self, Any
 
 from scrapy import Spider, signals
 from scrapy.crawler import Crawler
@@ -30,7 +30,7 @@ class WillysSpiderMiddleware:
         # Should return None or raise an exception.
         return None
 
-    def process_spider_output(self, response: Response, result, spider: Spider) -> Generator:
+    def process_spider_output(self, response: Response, result: Any, spider: Spider) -> Generator[Any, None, None]:
         # Called with the results returned from the Spider, after
         # it has processed the response.
 
@@ -44,7 +44,7 @@ class WillysSpiderMiddleware:
         # Should return either None or an iterable of Request or item objects.
         pass
 
-    async def process_start(self, start: AsyncIterator) -> AsyncGenerator:
+    async def process_start(self, start: AsyncIterator[Any]) -> AsyncGenerator[Any, None]:
         # Called with an async iterator over the spider start() method or the
         # maching method of an earlier spider middleware.
         async for item_or_request in start:

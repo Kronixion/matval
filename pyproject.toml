@@ -6,6 +6,9 @@ description = "matval (food choice) is a supermarket item procurement and natura
 authors = [
     {name = "Calin-Andrei Rasiga", email = "rasigacalin@gmail.com"}
 ]
+dependencies = [
+    "mcp>=1.26.0",
+]
 
 [project.optional-dependencies]
 dev = ["ruff", "mypy", "pytest", "pytest-cov", "commitizen", "pre-commit"]

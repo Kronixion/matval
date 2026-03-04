@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
+from typing import Any
 
 import scrapy
 from scrapy import Request
-from scrapy.http import JsonRequest, Response
+from scrapy.http import JsonRequest, TextResponse
 
 from willys.items import WillysItem
 
@@ -75,7 +76,7 @@ class WillysSpider(scrapy.Spider):
         "Referer": "https://www.willys.se/",
     }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self._queued_slugs: set[str] = set()
         self._seen_product_codes: set[str] = set()
@@ -117,7 +118,7 @@ class WillysSpider(scrapy.Spider):
 
     def parse_product_listing(
         self,
-        response: Response,
+        response: TextResponse,
         category_slug: str,
         full_slug: str,
         subcategory_slug: str | None,

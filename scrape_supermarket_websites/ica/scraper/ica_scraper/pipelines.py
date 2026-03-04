@@ -8,5 +8,5 @@ from scrapy import Item, Spider
 
 
 class IcaScraperPipeline:
-    def process_item(self, item: Item, spider: Spider):
+    def process_item(self, item: Item, spider: Spider) -> Item:
         return item

@@ -6,9 +6,11 @@ import asyncio
 import json
 import logging
 import os
-from collections.abc import Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping
+from contextlib import AbstractAsyncContextManager
 from functools import partial
-from typing import Any
+from types import TracebackType
+from typing import Any, Literal, cast
 
 from dotenv import load_dotenv
 from matval_pipeline.connector import PostgresConfig, PostgresConnector
@@ -59,14 +61,17 @@ def _create_connector() -> PostgresConnector:
 _connector = _create_connector()
 
 
-async def _run_db_call(func: callable, *args: Any, **kwargs: Any) -> Any:
+async def _run_db_call(func: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
     return await asyncio.to_thread(partial(func, *args, **kwargs))
 
 
 mcp = FastMCP("shelfwatch")
 
 
-_transport = os.getenv("SHELFWATCH_MCP_TRANSPORT", "stdio").strip().lower()
+_transport = cast(
+    Literal["stdio", "sse", "streamable-http"], 
+    os.getenv("SHELFWATCH_MCP_TRANSPORT", "streamable_http").strip().lower()
+)
 _host = os.getenv("SHELFWATCH_MCP_HOST")
 _port_raw = os.getenv("SHELFWATCH_MCP_PORT")
 
@@ -77,11 +82,6 @@ if _port_raw:
         mcp.settings.port = int(_port_raw)
     except ValueError as exc:  # pragma: no cover - defensive
         raise ValueError("SHELFWATCH_MCP_PORT must be an integer") from exc
-
-
-# ---------------------------------------------------------------------------
-# Helper
-# ---------------------------------------------------------------------------
 
 
 def _normalize_params(params: Mapping[str, Any] | Iterable[Any] | None) -> Any | None:
@@ -97,16 +97,11 @@ def _normalize_params(params: Mapping[str, Any] | Iterable[Any] | None) -> Any |
 def _rows_to_dicts(rows: list[Any]) -> list[dict[str, Any]]:
     return [dict(row) for row in rows]
 
-
-# ---------------------------------------------------------------------------
-# Tools
-# ---------------------------------------------------------------------------
-
-
+#Start of MCP Tools
 @mcp.tool()
 async def execute_query(
     sql: str, params: Mapping[str, Any] | Iterable[Any] | None = None
-) -> list[Mapping[str, Any]]:
+) -> list[dict[str, Any]]:
     """Execute a raw SQL query — escape hatch for complex queries not covered by the other tools.
 
     Database schema (all in the public schema of supermarket_items):
@@ -397,16 +392,12 @@ async def get_price_history(
     return _rows_to_dicts(rows)
 
 
-# ---------------------------------------------------------------------------
-# Lifecycle & entrypoint
-# ---------------------------------------------------------------------------
-
-
-class ConnectorLifespan:
+class ConnectorLifespan(AbstractAsyncContextManager[None]):
     async def __aenter__(self) -> None:
         return None
 
-    async def __aexit__(self, exc_type, exc, tb) -> None:
+    async def __aexit__(self, exc_type: type[BaseException] | None,
+                         exc: BaseException | None, tb: TracebackType | None) -> None:
         _LOG.info("Closing Postgres connector")
         _connector.close()
 
