@@ -1,3 +1,9 @@
+## v0.2.5 (2026-03-04)
+
+### Fix
+
+- Fixed multiple type hints, no untyped definitions, wrong argument types: 14 remaining.
+
 ## v0.2.4 (2026-03-04)
 
 ### Fix
