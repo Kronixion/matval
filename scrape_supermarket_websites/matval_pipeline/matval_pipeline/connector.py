@@ -11,6 +11,7 @@ from typing import Any
 import psycopg
 from psycopg import Connection, Cursor, Transaction
 from psycopg.rows import DictRow, RowFactory, dict_row
+from psycopg.sql import SQL, Composed
 
 
 @dataclass(frozen=True, slots=True)
@@ -79,7 +80,7 @@ class PostgresConnector:
 
     def sql_query(
         self,
-        sql: str,
+        sql: str | bytes | SQL | Composed,
         params: Sequence[Any] | Mapping[str, Any] | None = None,
         *,
         row_factory: RowFactory | None = None,

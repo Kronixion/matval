@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import re
 from collections.abc import Iterable, Iterator
-from typing import Any
+from typing import Any, cast
 from urllib.parse import urljoin
 
 import scrapy
@@ -104,7 +104,7 @@ class MathemSpider(scrapy.Spider):
             subcategory_name,
         )
 
-    def parse_product(self, response: TextResponse, meta: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    def parse_product(self, response: TextResponse, meta: dict[str, dict[str, Any]]) -> Iterator[MathemItem]:
         """Combine category data with detailed nutrition information.
 
         Args:
@@ -474,7 +474,7 @@ class MathemSpider(scrapy.Spider):
         # Some products expose nutritionFacts directly
         nutrition = detail.get("nutritionFacts")
         if nutrition:
-            return nutrition
+            return cast(dict[str, str], nutrition)
 
         detailed_info = detail.get("detailedInfo", {})
         local_sections = detailed_info.get("local") if isinstance(detailed_info, dict) else None
@@ -489,7 +489,7 @@ class MathemSpider(scrapy.Spider):
 
         return {}
 
-    def _extract_category_slugs(self, response) -> Iterable[str]:
+    def _extract_category_slugs(self, response: Response) -> Iterable[str]:
         """Pull category slugs from links in the products page HTML."""
 
         seen: set[str] = set()

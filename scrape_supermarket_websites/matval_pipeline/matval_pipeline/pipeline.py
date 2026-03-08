@@ -58,6 +58,8 @@ class PostgresPipeline:
             _LOG.warning("Skipping item without a name: %s", item)
             return item
 
+        assert self._ops is not None
+        assert self._connector is not None
         try:
             category_id = self._ops.get_or_create_category(
                 adapter.get("subcategory"), adapter.get("category")

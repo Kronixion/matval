@@ -173,7 +173,8 @@ class DBOps:
         unit_id = None
         if unit_quantity_name or unit_quantity_abbrev:
             unit_key = unit_quantity_name or unit_quantity_abbrev
-            unit_id = self.get_or_create_unit(unit_key, unit_quantity_abbrev or unit_quantity_name)
+            assert unit_key is not None
+            unit_id = self.get_or_create_unit(unit_key, unit_quantity_abbrev or unit_key)
 
         availability_status_id = self.get_or_create_lookup(
             "availability_statuses", "name", normalize_availability(availability)

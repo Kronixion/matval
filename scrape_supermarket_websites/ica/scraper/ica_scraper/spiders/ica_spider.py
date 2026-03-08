@@ -179,7 +179,7 @@ class IcaSpider(scrapy.Spider):
             cookies=cookies,
             body=json.dumps(product_ids),
             meta={"category_chain": category_chain, "product_ids": product_ids},
-            callback=self.parse_product_batch,
+            callback=self.parse_product_batch,  # type: ignore[arg-type]
             dont_filter=True,
         )
 
@@ -209,6 +209,8 @@ class IcaSpider(scrapy.Spider):
                 "category_chain": chain,
                 "waf_retries": retries + 1,
             }
+            if category_id is None:
+                return
             yield self._build_category_request(category_id, slug, new_meta, dont_filter=True)
             return
 
@@ -402,7 +404,7 @@ class IcaSpider(scrapy.Spider):
                 context = browser.new_context(user_agent=_BROWSER_UA)
                 page = context.new_page()
 
-                def on_request(request):
+                def on_request(request: Any) -> None:
                     nonlocal csrf
                     if "webproductpagews" in request.url and not csrf:
                         csrf = request.headers.get("x-csrf-token")
@@ -507,7 +509,7 @@ class IcaSpider(scrapy.Spider):
 
     def _request_headers(self, slug: str, category_id: str) -> dict[str, str]:
         referer = f"https://handlaprivatkund.ica.se/stores/{self.store_id}/categories/{slug}/{category_id}"
-        headers = self.custom_settings["DEFAULT_REQUEST_HEADERS"].copy()
+        headers: dict[str, str] = dict(self.custom_settings["DEFAULT_REQUEST_HEADERS"])
         headers["Referer"] = referer
         return headers
 
