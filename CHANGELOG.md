@@ -1,3 +1,9 @@
+## v0.2.6 (2026-03-08)
+
+### Fix
+
+- Finalized fixing type hints.
+
 ## v0.2.5 (2026-03-04)
 
 ### Fix
