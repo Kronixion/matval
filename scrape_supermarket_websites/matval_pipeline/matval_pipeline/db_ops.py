@@ -1,5 +1,3 @@
-"""Database operations — get-or-create and upsert helpers with in-memory caches."""
-
 from __future__ import annotations
 
 import json
@@ -18,18 +16,35 @@ LOOKUP_ID_COLUMNS = {
 
 
 class DBOps:
-    """Wraps a :class:`PostgresConnector` with cached get-or-create helpers."""
 
     def __init__(self, connector: PostgresConnector) -> None:
         self._conn = connector
+        self._supermarket_cache: dict[str, int] = {}
         self._category_cache: dict[tuple[str | None, str | None], int | None] = {}
         self._product_cache: dict[tuple[str, int | None], int] = {}
         self._unit_cache: dict[str, int] = {}
         self._lookup_cache: dict[tuple[str, str | None], int | None] = {}
         self._currency_seen: set[str] = set()
 
-    # Add get or create supermarket, whenever a spider is run.
-    # It is a cleaner approach rather than seeding the database using docker-compose.
+    def get_or_create_supermarket(self, name: str) -> int:
+        if name in self._supermarket_cache:
+            return self._supermarket_cache[name]
+
+        row = self._conn.sql_query(
+            """WITH ins AS (
+                   INSERT INTO supermarkets (name) VALUES (%s)
+                   ON CONFLICT (name) DO NOTHING
+                   RETURNING supermarket_id
+               )
+               SELECT supermarket_id FROM ins
+               UNION ALL
+               SELECT supermarket_id FROM supermarkets WHERE name = %s
+               LIMIT 1""",
+            (name, name),
+        )
+        sid = int(row[0]["supermarket_id"])
+        self._supermarket_cache[name] = sid
+        return sid
 
     def get_or_create_category(self, name: str | None, parent_name: str | None) -> int | None:
         if not name:
@@ -149,7 +164,7 @@ class DBOps:
 
     def upsert_store_product(
         self,
-        store_id: int,
+        supermarket_id: int,
         product_id: int,
         *,
         url: str | None = None,
@@ -173,7 +188,10 @@ class DBOps:
         unit_id = None
         if unit_quantity_name or unit_quantity_abbrev:
             unit_key = unit_quantity_name or unit_quantity_abbrev
-            assert unit_key is not None
+
+            if unit_key is None:
+                raise RuntimeError("unit_key is unexpectedly None")
+            
             unit_id = self.get_or_create_unit(unit_key, unit_quantity_abbrev or unit_key)
 
         availability_status_id = self.get_or_create_lookup(
@@ -183,12 +201,12 @@ class DBOps:
         self._conn.non_sql_query(
             """
             INSERT INTO store_products (
-                store_id, product_id, url, currency_code, price, unit_price,
+                supermarket_id, product_id, url, currency_code, price, unit_price,
                 unit_quantity, unit_id, quantity_type_id, availability_status_id,
                 nutrition_raw, notes
             )
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (store_id, product_id) DO UPDATE SET
+            ON CONFLICT (supermarket_id, product_id) DO UPDATE SET
                 url = EXCLUDED.url,
                 currency_code = EXCLUDED.currency_code,
                 price = EXCLUDED.price,
@@ -202,7 +220,7 @@ class DBOps:
                 last_seen_at = NOW()
             """,
             (
-                store_id,
+                supermarket_id,
                 product_id,
                 url,
                 currency_code,

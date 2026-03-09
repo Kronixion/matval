@@ -9,15 +9,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-STORE_IDS: dict[str, int] = {
-    "coop": 1,
-    "hemkop": 2,
-    "ica": 3,
-    "mathem": 4,
-    "willys": 5,
-}
-
-
 @dataclass(frozen=True, slots=True)
 class PipelineConfig:
     """DB connection settings, read from environment variables."""

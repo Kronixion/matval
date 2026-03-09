@@ -1,5 +1,3 @@
-"""Scrapy ItemPipeline that writes items directly to PostgreSQL."""
-
 from __future__ import annotations
 
 import logging
@@ -7,7 +5,7 @@ from typing import Any
 
 from itemadapter import ItemAdapter
 
-from .config import STORE_IDS, PipelineConfig
+from .config import PipelineConfig
 from .connector import PostgresConfig, PostgresConnector
 from .db_ops import DBOps
 
@@ -15,26 +13,19 @@ _LOG = logging.getLogger(__name__)
 
 
 class PostgresPipeline:
-    """Scrapy pipeline: normalizes items and upserts them into the DB."""
 
     def __init__(self, store_name: str) -> None:
         self.store_name = store_name
-        self.store_id = STORE_IDS[store_name]
+        self.supermarket_id: int | None = None
         self._connector: PostgresConnector | None = None
         self._ops: DBOps | None = None
         self._count = 0
-
-    # ------------------------------------------------------------------
-    # Scrapy hooks
-    # ------------------------------------------------------------------
 
     @classmethod
     def from_crawler(cls, crawler: Any) -> PostgresPipeline:
         store_name = crawler.settings.get("STORE_NAME")
         if not store_name:
             raise ValueError("STORE_NAME must be set in Scrapy settings")
-        if store_name not in STORE_IDS:
-            raise ValueError(f"Unknown store: {store_name!r}. Valid: {list(STORE_IDS)}")
         return cls(store_name)
 
     def open_spider(self, spider: Any) -> None:
@@ -48,7 +39,8 @@ class PostgresPipeline:
         )
         self._connector = PostgresConnector(config=pg_config, autocommit=False)
         self._ops = DBOps(self._connector)
-        _LOG.info("PostgresPipeline opened for store=%s (id=%d)", self.store_name, self.store_id)
+        self.supermarket_id = self._ops.get_or_create_supermarket(self.store_name)
+        _LOG.info("PostgresPipeline opened for store=%s (id=%d)", self.store_name, self.supermarket_id)
 
     def process_item(self, item: Any, spider: Any) -> Any:
         adapter = ItemAdapter(item)
@@ -58,15 +50,16 @@ class PostgresPipeline:
             _LOG.warning("Skipping item without a name: %s", item)
             return item
 
-        assert self._ops is not None
-        assert self._connector is not None
+        if self._ops is None or self._connector is None or self.supermarket_id is None:   
+            raise RuntimeError("Pipeline not properly initialized")
+
         try:
             category_id = self._ops.get_or_create_category(
                 adapter.get("subcategory"), adapter.get("category")
             )
             product_id = self._ops.get_or_create_product(name, category_id)
             self._ops.upsert_store_product(
-                self.store_id,
+                self.supermarket_id,
                 product_id,
                 url=adapter.get("url"),
                 price=adapter.get("price"),
