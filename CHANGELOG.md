@@ -1,3 +1,9 @@
+## v0.3.0 (2026-03-09)
+
+### Feat
+
+- Unit tests for normalizers.py are added. The currency map from normalizers was moved to a config folder in currency_aliases.json as that will undoutebly grow in time. seed_database.sql was removed, because the pipeline creates or retrieves a new supermarket when a spider is run. It was also removed from docker-compose.yml. All the type hints were fixed. Next steps: Figure out how to test the pipeline.py, db_ops.py, and connector.py (docker with postgress possibly, but I'll have to see how I deal with the coverage in this case), test the crawlers with contracts, but custom contracts are needed in this case.
+
 ## v0.2.6 (2026-03-08)
 
 ### Fix
