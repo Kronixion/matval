@@ -1,3 +1,9 @@
+## v0.3.2 (2026-03-11)
+
+### Fix
+
+- Refactored the redundant PostgresConfig class from connector.py and switched the PipelineConfig class to the PostgresConfig one. Modified pipeline.py as well to use only one Config class.
+
 ## v0.3.1 (2026-03-11)
 
 ### Fix
