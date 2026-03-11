@@ -5,8 +5,8 @@ from typing import Any
 
 from itemadapter import ItemAdapter
 
-from .config import PipelineConfig
-from .connector import PostgresConfig, PostgresConnector
+from .config import PostgresConfig
+from .connector import PostgresConnector
 from .db_ops import DBOps
 
 _LOG = logging.getLogger(__name__)
@@ -29,14 +29,7 @@ class PostgresPipeline:
         return cls(store_name)
 
     def open_spider(self, spider: Any) -> None:
-        cfg = PipelineConfig().from_env()
-        pg_config = PostgresConfig(
-            host=cfg.host,
-            port=cfg.port,
-            dbname=cfg.dbname,
-            user=cfg.user,
-            password=cfg.password,
-        )
+        pg_config = PostgresConfig.from_env()
         self._connector = PostgresConnector(config=pg_config, autocommit=False)
         self._ops = DBOps(self._connector)
         self.supermarket_id = self._ops.get_or_create_supermarket(self.store_name)

@@ -11,7 +11,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["ruff", "mypy", "pytest", "pytest-cov", "testcontainers[postgres]", "commitizen", "pre-commit"]
+dev = ["ruff", "mypy", "pytest", "pytest-cov", "testcontainers[postgres]", "commitizen", "pre-commit", "psycopg"]
 
 [tool.uv.workspace]
 members = [

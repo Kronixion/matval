@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from dataclasses import dataclass, field
 from types import TracebackType
 from typing import Any
 
@@ -13,29 +12,7 @@ from psycopg import Connection, Cursor, Transaction
 from psycopg.rows import DictRow, RowFactory, dict_row
 from psycopg.sql import SQL, Composed
 
-
-@dataclass(frozen=True, slots=True)
-class PostgresConfig:
-    """Connection information for the PostgreSQL instance."""
-
-    host: str = "localhost"
-    port: int = 5432
-    dbname: str = "supermarket_items"
-    user: str = "postgres"
-    password: str = ""
-    options: dict[str, Any] = field(default_factory=dict)
-
-    def to_connection_kwargs(self) -> Mapping[str, Any]:
-        base: dict[str, Any] = {
-            "host": self.host,
-            "port": self.port,
-            "dbname": self.dbname,
-            "user": self.user,
-            "password": self.password,
-        }
-        if self.options:
-            base.update(self.options)
-        return base
+from matval_pipeline.config import PostgresConfig
 
 
 class PostgresConnector:
