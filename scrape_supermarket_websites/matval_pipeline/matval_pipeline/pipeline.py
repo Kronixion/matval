@@ -29,7 +29,7 @@ class PostgresPipeline:
         return cls(store_name)
 
     def open_spider(self, spider: Any) -> None:
-        cfg = PipelineConfig()
+        cfg = PipelineConfig().from_env()
         pg_config = PostgresConfig(
             host=cfg.host,
             port=cfg.port,
