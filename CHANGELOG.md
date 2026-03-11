@@ -1,3 +1,9 @@
+## v0.3.1 (2026-03-11)
+
+### Fix
+
+- Refactored config.py from matval_pipeline for testing purposes. Added tests for config.py under test_config.py
+
 ## v0.3.0 (2026-03-09)
 
 ### Feat
