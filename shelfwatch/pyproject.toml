@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "shelfwatch"
 version = "0.1.0"
 description = "MCP server for querying supermarket food data from PostgreSQL"
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 dependencies = [
     "mcp",
     "matval-pipeline",

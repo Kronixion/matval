@@ -88,13 +88,25 @@ class MathemSpider(scrapy.Spider):
             self.logger.warning("Missing queries for %s", response.url)
             return
 
-        data = queries[0].get("state", {}).get("data", {})
+        blocks_data: dict[str, Any] = {}
+        pages_data: dict[str, Any] = {}
+        for query in queries:
+            query_data = query.get("state", {}).get("data")
+            if not isinstance(query_data, dict):
+                continue
+            if not blocks_data and "blocks" in query_data:
+                blocks_data = query_data
+            if not pages_data and "pages" in query_data:
+                pages_data = query_data
 
         if subcategory_slug is None:
-            yield from self._discover_subcategories(response.url, data, build_id, category_slug)
+            yield from self._discover_subcategories(
+                response.url, blocks_data or pages_data, build_id, category_slug,
+            )
             return
 
-        # Handle subcategory content
+        # Prefer pages (product listings) over blocks (legacy layout)
+        data = pages_data or blocks_data
         yield from self._extract_subcategory_products(
             response,
             data,
@@ -116,14 +128,13 @@ class MathemSpider(scrapy.Spider):
         """
 
         base_product = meta["base_info"]
-        detail = (
-            response.json()
-            .get("pageProps", {})
-            .get("dehydratedState", {})
-            .get("queries", [{}])[0]
-            .get("state", {})
-            .get("data", {})
-        )
+        queries = response.json().get("pageProps", {}).get("dehydratedState", {}).get("queries", [])
+        detail: dict[str, Any] = {}
+        for query in queries:
+            query_data = query.get("state", {}).get("data")
+            if isinstance(query_data, dict) and "detailedInfo" in query_data:
+                detail = query_data
+                break
 
         nutrition = self._extract_nutrition(detail)
         detailed_info = detail.get("detailedInfo", {}) if isinstance(detail, dict) else {}
