@@ -1,3 +1,9 @@
+## v0.4.0 (2026-03-12)
+
+### Feat
+
+- Modified the mathem scraper as json structure was modified.
+
 ## v0.3.2 (2026-03-11)
 
 ### Fix
