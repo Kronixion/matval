@@ -1,3 +1,9 @@
+## v0.4.1 (2026-03-15)
+
+### Fix
+
+- Added integration tests for connector.py, dev_ops.py and pipelines.py.
+
 ## v0.4.0 (2026-03-12)
 
 ### Feat
