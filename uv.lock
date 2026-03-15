@@ -839,7 +839,7 @@ requires-dist = [{ name = "scrapy" }]
 
 [[package]]
 name = "matval"
-version = "0.3.2"
+version = "0.4.0"
 source = { virtual = "." }
 dependencies = [
     { name = "mcp" },
@@ -848,6 +848,7 @@ dependencies = [
 [package.optional-dependencies]
 dev = [
     { name = "commitizen" },
+    { name = "itemadapter" },
     { name = "mypy" },
     { name = "pre-commit" },
     { name = "psycopg" },
@@ -860,6 +861,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "commitizen", marker = "extra == 'dev'" },
+    { name = "itemadapter", marker = "extra == 'dev'" },
     { name = "mcp", specifier = ">=1.26.0" },
     { name = "mypy", marker = "extra == 'dev'" },
     { name = "pre-commit", marker = "extra == 'dev'" },

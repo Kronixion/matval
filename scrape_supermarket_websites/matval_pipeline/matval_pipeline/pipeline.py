@@ -35,7 +35,7 @@ class PostgresPipeline:
         self.supermarket_id = self._ops.get_or_create_supermarket(self.store_name)
         _LOG.info("PostgresPipeline opened for store=%s (id=%d)", self.store_name, self.supermarket_id)
 
-    def process_item(self, item: Any, spider: Any) -> Any:
+    def process_item(self, item: Any, _spider: Any) -> Any:
         adapter = ItemAdapter(item)
 
         name = adapter.get("name")
@@ -76,7 +76,7 @@ class PostgresPipeline:
 
         return item
 
-    def close_spider(self, spider: Any) -> None:
+    def close_spider(self, _spider: Any) -> None:
         if self._connector is not None:
             try:
                 self._connector.connection.commit()

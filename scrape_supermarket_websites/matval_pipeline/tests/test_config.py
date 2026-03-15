@@ -20,8 +20,8 @@ def test_from_env_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
     assert cfg.password == ""
 
 def test_from_env_reads_env_vars(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("POSTGRES_HOST", "192.168.0.10")                                                             
-    monkeypatch.setenv("POSTGRES_PORT", "5433")                                                           
+    monkeypatch.setenv("POSTGRES_HOST", "192.168.0.10")
+    monkeypatch.setenv("POSTGRES_PORT", "5433")
     monkeypatch.setenv("POSTGRES_DB", "grocery_items")
     monkeypatch.setenv("POSTGRES_USER", "grocery_user")
     monkeypatch.setenv("POSTGRES_PASSWORD", "grocery_password")
@@ -32,3 +32,9 @@ def test_from_env_reads_env_vars(monkeypatch: pytest.MonkeyPatch) -> None:
     assert cfg.dbname == "grocery_items"
     assert cfg.user == "grocery_user"
     assert cfg.password == "grocery_password" #noqa: S105, dummy password
+
+
+def test_to_connection_kwargs_includes_options() -> None:
+    cfg = PostgresConfig(options={"connect_timeout": 10})
+    kwargs = cfg.to_connection_kwargs()
+    assert kwargs["connect_timeout"] == 10

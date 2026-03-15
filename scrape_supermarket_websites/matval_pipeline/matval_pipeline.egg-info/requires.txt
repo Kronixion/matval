@@ -1,3 +1,0 @@
-psycopg[binary]>=3.0
-itemadapter>=0.9
-python-dotenv>=1.0.0
