@@ -1,5 +1,3 @@
-"""PostgreSQL connector — consolidated from the existing codebase."""
-
 from __future__ import annotations
 
 from collections.abc import Iterable, Iterator, Mapping, Sequence
@@ -12,11 +10,10 @@ from psycopg import Connection, Cursor, Transaction
 from psycopg.rows import DictRow, RowFactory, dict_row
 from psycopg.sql import SQL, Composed
 
-from matval_pipeline.config import PostgresConfig
+from matval_core.db.config import PostgresConfig
 
 
 class PostgresConnector:
-    """Lightweight convenience wrapper around ``psycopg.Connection``."""
 
     def __init__(
         self,

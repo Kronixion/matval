@@ -9,7 +9,9 @@ members = [
     "ica-scraper",
     "mathem-scraper",
     "matval",
+    "matval-core",
     "matval-pipeline",
+    "shelfwatch",
     "willys-scraper",
 ]
 
@@ -839,7 +841,7 @@ requires-dist = [{ name = "scrapy" }]
 
 [[package]]
 name = "matval"
-version = "0.4.0"
+version = "0.4.1"
 source = { virtual = "." }
 dependencies = [
     { name = "mcp" },
@@ -874,19 +876,34 @@ requires-dist = [
 provides-extras = ["dev"]
 
 [[package]]
-name = "matval-pipeline"
+name = "matval-core"
 version = "0.1.0"
-source = { editable = "scrape_supermarket_websites/matval_pipeline" }
+source = { editable = "matval_core" }
 dependencies = [
-    { name = "itemadapter" },
     { name = "psycopg", extra = ["binary"] },
     { name = "python-dotenv" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "itemadapter", specifier = ">=0.9" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.0" },
+    { name = "python-dotenv", specifier = ">=1.0.0" },
+]
+
+[[package]]
+name = "matval-pipeline"
+version = "0.1.0"
+source = { editable = "scrape_supermarket_websites/matval_pipeline" }
+dependencies = [
+    { name = "itemadapter" },
+    { name = "matval-core" },
+    { name = "python-dotenv" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "itemadapter", specifier = ">=0.9" },
+    { name = "matval-core", editable = "matval_core" },
     { name = "python-dotenv", specifier = ">=1.0.0" },
 ]
 
@@ -1580,6 +1597,26 @@ sdist = { url = "https://files.pythonhosted.org/packages/07/a5/dfc752b9790679472
 wheels = [
     { url = "https://files.pythonhosted.org/packages/08/2c/ca6dd598b384bc1ce581e24aaae0f2bed4ccac57749d5c3befbb5e742081/service_identity-24.2.0-py3-none-any.whl", hash = "sha256:6b047fbd8a84fd0bb0d55ebce4031e400562b9196e1e0d3e0fe2b8a59f6d4a85", size = 11364, upload-time = "2024-10-26T07:21:56.302Z" },
 ]
+
+[[package]]
+name = "shelfwatch"
+version = "0.1.0"
+source = { editable = "shelfwatch" }
+dependencies = [
+    { name = "matval-core" },
+    { name = "mcp" },
+    { name = "python-dotenv" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "matval-core", editable = "matval_core" },
+    { name = "mcp" },
+    { name = "python-dotenv", specifier = ">=1.0.0" },
+]
+
+[package.metadata.requires-dev]
+dev = []
 
 [[package]]
 name = "soupsieve"

@@ -1,8 +1,8 @@
 # ruff: noqa: S101
 import psycopg
 import pytest
-from matval_pipeline.config import PostgresConfig
-from matval_pipeline.connector import PostgresConnector
+from matval_core.db.config import PostgresConfig
+from matval_core.db.connector import PostgresConnector
 
 
 @pytest.fixture(scope="session", autouse=False)

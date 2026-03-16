@@ -1,5 +1,3 @@
-"""Environment-variable-based database configuration."""
-
 from __future__ import annotations
 
 import os
@@ -31,7 +29,7 @@ class PostgresConfig:
             user = os.getenv("POSTGRES_USER", "postgres"),
             password = os.getenv("POSTGRES_PASSWORD", "")
         )
-    
+
     def to_connection_kwargs(self) -> Mapping[str, Any]:
         base: dict[str, Any] = {
             "host": self.host,

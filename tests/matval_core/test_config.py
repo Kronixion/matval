@@ -2,7 +2,7 @@
 # ruff: noqa: S101
 
 import pytest
-from matval_pipeline.config import PostgresConfig
+from matval_core.db.config import PostgresConfig
 
 
 def test_from_env_defaults(monkeypatch: pytest.MonkeyPatch) -> None:

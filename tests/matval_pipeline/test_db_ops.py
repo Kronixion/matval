@@ -1,6 +1,6 @@
 # ruff: noqa: S101
 import pytest
-from matval_pipeline.connector import PostgresConnector
+from matval_core.db.connector import PostgresConnector
 from matval_pipeline.db_ops import DBOps
 
 

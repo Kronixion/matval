@@ -1,12 +1,10 @@
 from collections.abc import Generator
-from pathlib import Path
+from importlib.resources import files
 
 import pytest
-from matval_pipeline.config import PostgresConfig
-from matval_pipeline.connector import PostgresConnector
+from matval_core.db.config import PostgresConfig
+from matval_core.db.connector import PostgresConnector
 from testcontainers.postgres import PostgresContainer
-
-SCHEMA_PATH = Path(__file__).parents[3] / "db" / "schema.sql"
 
 
 @pytest.fixture(scope="session")
@@ -34,6 +32,6 @@ def pg_connector(pg_config: PostgresConfig) -> Generator[PostgresConnector]:
 
 @pytest.fixture(scope="session")
 def apply_schema(pg_connector: PostgresConnector) -> None:
-    schema_sql = SCHEMA_PATH.read_text()
+    schema_sql = files("matval_core.db").joinpath("schema.sql").read_text()
     pg_connector.connection.pgconn.exec_(schema_sql.encode())
     pg_connector.connection.commit()

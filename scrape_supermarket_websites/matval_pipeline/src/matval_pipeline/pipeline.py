@@ -5,8 +5,8 @@ from typing import Any
 
 from itemadapter import ItemAdapter
 
-from .config import PostgresConfig
-from .connector import PostgresConnector
+from matval_core.db.config import PostgresConfig
+from matval_core.db.connector import PostgresConnector
 from .db_ops import DBOps
 
 _LOG = logging.getLogger(__name__)
@@ -43,7 +43,7 @@ class PostgresPipeline:
             _LOG.warning("Skipping item without a name: %s", item)
             return item
 
-        if self._ops is None or self._connector is None or self.supermarket_id is None:   
+        if self._ops is None or self._connector is None or self.supermarket_id is None:
             raise RuntimeError("Pipeline not properly initialized")
 
         try:

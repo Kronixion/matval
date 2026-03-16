@@ -1,15 +1,20 @@
-FROM python:3.12-slim
+FROM python:3.13-slim
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 WORKDIR /app
+
+# Install matval_core (shared dependency)
+COPY matval_core/ /app/matval_core/
+RUN uv pip install --system --no-cache /app/matval_core/
 
 # Install matval_pipeline (shared dependency)
 COPY scrape_supermarket_websites/matval_pipeline/ /app/matval_pipeline/
-RUN pip install --no-cache-dir /app/matval_pipeline/
+RUN uv pip install --system --no-cache /app/matval_pipeline/
 
 # Install scraper dependencies (scrapy + beautifulsoup4 for ica)
-RUN pip install --no-cache-dir scrapy beautifulsoup4
+RUN uv pip install --system --no-cache scrapy beautifulsoup4
 
 # Install Playwright + Chromium for ICA's AWS WAF challenge
-RUN pip install --no-cache-dir playwright \
+RUN uv pip install --system --no-cache playwright \
     && playwright install --with-deps chromium
 
 # Copy all scraper projects

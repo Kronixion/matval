@@ -13,7 +13,7 @@ from types import TracebackType
 from typing import Any, Literal, cast
 
 from dotenv import load_dotenv
-from matval_pipeline.connector import PostgresConfig, PostgresConnector
+from matval_core.db.connector import PostgresConfig, PostgresConnector
 from mcp.server.fastmcp import FastMCP
 
 _LOG = logging.getLogger(__name__)

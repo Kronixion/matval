@@ -1,12 +1,13 @@
-FROM python:3.12-slim
+FROM python:3.13-slim
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 WORKDIR /app
 
-# Install matval_pipeline first (shared dependency)
-COPY scrape_supermarket_websites/matval_pipeline/ /app/matval_pipeline/
-RUN pip install --no-cache-dir /app/matval_pipeline/
+# Install matval_core first (shared dependency)
+COPY matval_core/ /app/matval_core/
+RUN uv pip install --system --no-cache /app/matval_core/
 
 # Install shelfwatch
 COPY shelfwatch/ /app/shelfwatch/
-RUN pip install --no-cache-dir /app/shelfwatch/
+RUN uv pip install --system --no-cache /app/shelfwatch/
 
 CMD ["shelfwatch"]

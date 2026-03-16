@@ -5,7 +5,7 @@ from typing import Any
 
 from psycopg import sql
 
-from .connector import PostgresConnector
+from matval_core.db.connector import PostgresConnector
 from .normalizers import normalize_availability, normalize_currency, normalize_float
 
 LOOKUP_ID_COLUMNS = {
@@ -94,7 +94,7 @@ class DBOps:
         pid = int(row[0]["product_id"])
         self._product_cache[key] = pid
         return pid
-    
+
     def get_or_create_lookup(self, table: str, column: str, value: str | None) -> int | None:
         if value is None:
             return None
@@ -107,8 +107,7 @@ class DBOps:
         if not id_column:
             raise ValueError(f"Lookup table '{table}' not registered in LOOKUP_ID_COLUMNS")
 
-        
-        query = sql.SQL("""WITH ins AS ( 
+        query = sql.SQL("""WITH ins AS (
                             INSERT INTO {table} ({column}) VALUES (%s)
                             ON CONFLICT ({column}) DO NOTHING
                             RETURNING {id_column}
@@ -121,7 +120,7 @@ class DBOps:
                             column = sql.Identifier(column),
                             id_column = sql.Identifier(id_column),
                         )
-        row = self._conn.sql_query(query,(value, value),) 
+        row = self._conn.sql_query(query,(value, value),)
         lid = int(row[0][id_column])
         self._lookup_cache[key] = lid
         return lid
@@ -191,7 +190,7 @@ class DBOps:
 
             if unit_key is None:
                 raise RuntimeError("unit_key is unexpectedly None")
-            
+
             unit_id = self.get_or_create_unit(unit_key, unit_quantity_abbrev or unit_key)
 
         availability_status_id = self.get_or_create_lookup(

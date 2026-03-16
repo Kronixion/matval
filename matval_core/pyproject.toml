@@ -3,18 +3,14 @@ requires = ["uv_build>=0.5.15"]
 build-backend = "uv_build"
 
 [project]
-name = "matval-pipeline"
+name = "matval-core"
 version = "0.1.0"
-description = "Shared Scrapy pipeline for Matval supermarket scrapers"
+description = "Shared database connectivity for Matval"
 requires-python = ">=3.13"
 dependencies = [
-    "matval-core",
-    "itemadapter>=0.9",
+    "psycopg[binary]>=3.0",
     "python-dotenv>=1.0.0",
 ]
-
-[tool.uv.sources]
-matval-core = { workspace = true }
 
 [tool.uv.build-backend]
 source = "src"

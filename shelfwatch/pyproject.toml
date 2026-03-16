@@ -1,25 +1,26 @@
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["uv_build>=0.5.15"]
+build-backend = "uv_build"
 
 [project]
 name = "shelfwatch"
 version = "0.1.0"
 description = "MCP server for querying supermarket food data from PostgreSQL"
-requires-python = ">=3.12"
+requires-python = ">=3.13"
 dependencies = [
     "mcp",
-    "matval-pipeline",
-    "psycopg[binary]>=3.0",
+    "matval-core",
     "python-dotenv>=1.0.0",
 ]
 
 [project.scripts]
 shelfwatch = "shelfwatch.server:main"
 
-[tool.uv]
-dev-dependencies = []
+[dependency-groups]
+dev = []
 
-[tool.hatch.build.targets.wheel]
-packages = ["src/shelfwatch"]
+[tool.uv.sources]
+matval-core = { workspace = true }
 
+[tool.uv.build-backend]
+source = "src"

@@ -3,8 +3,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from matval_pipeline.connector import PostgresConnector
-from matval_pipeline.config import PostgresConfig
+from matval_core.db.config import PostgresConfig
+from matval_core.db.connector import PostgresConnector
 from matval_pipeline.db_ops import DBOps
 from matval_pipeline.pipeline import PostgresPipeline
 
@@ -90,7 +90,7 @@ def test_close_spider_closes_connector(pg_config: PostgresConfig, apply_schema: 
 
     p.close_spider(None)
 
-    assert p._connector._connection.closed  # use private attr
+    assert p._connector._connection.closed
 
 def test_close_spider_with_no_connector_does_not_raise() -> None:
     p = PostgresPipeline("NeverOpenedMart")
