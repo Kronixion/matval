@@ -1,3 +1,9 @@
+## v0.5.0 (2026-03-16)
+
+### Feat
+
+- Migrated the build toolchain from hatchling to uv_build. Required python 3.13 across all pyproject.toml files. Consolidated all the tests inside one single folder named tests. Upgraded DockerFiles to use a slim version of Python 3.13 and switch from importing the entire matval_pipeline to matval_core (should probably switch it to db only).
+
 ## v0.4.1 (2026-03-15)
 
 ### Fix
