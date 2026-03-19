@@ -1,6 +1,6 @@
 [project]
 name = "matval"
-version = "0.5.0"
+version = "0.5.1"
 requires-python = ">=3.13"
 description = "matval (food choice) is a supermarket item procurement and natural-language retrieval project"
 authors = [

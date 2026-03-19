@@ -1,3 +1,9 @@
+## v0.5.1 (2026-03-19)
+
+### Fix
+
+- Observed several bugs that I've done when I've switched from stores to supermarkets. I've also forgotten to modify from stores to supermarkets in one instance and I've written supermarket instead of supermarkets which would cause errors. This was observed when I wanted to start writing tests.
+
 ## v0.5.0 (2026-03-16)
 
 ### Feat
