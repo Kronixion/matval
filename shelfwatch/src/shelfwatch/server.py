@@ -1,5 +1,3 @@
-"""MCP server exposing supermarket Postgres data tools."""
-
 from __future__ import annotations
 
 import asyncio
@@ -125,8 +123,6 @@ async def execute_query(
         availability_status_id FK->availability_statuses, \
             price NUMERIC(12,2), unit_price NUMERIC(12,4),
         recorded_at TIMESTAMPTZ)
-
-    Stores: coop(1), hemkop(2), ica(3), mathem(4), willys(5).
     """
 
     normalized = _normalize_params(params)
@@ -149,7 +145,7 @@ async def search_products(
                c.name AS category, pc.name AS parent_category
         FROM store_products sp
         JOIN products p ON p.product_id = sp.product_id
-        JOIN supermarket_id s ON s.supermarket_id = sp.supermarket_id
+        JOIN supermarkets s ON s.supermarket_id = sp.supermarket_id
         LEFT JOIN categories c ON c.category_id = p.category_id
         LEFT JOIN categories pc ON pc.category_id = c.parent_category_id
         WHERE p.name ILIKE %s
@@ -200,7 +196,7 @@ async def get_categories(store_name: str | None = None) -> list[dict[str, Any]]:
                    COUNT(*) AS product_count
             FROM store_products sp
             JOIN products p ON p.product_id = sp.product_id
-            JOIN supermarket s ON s.supermarket_id = sp.supermarket_id
+            JOIN supermarkets s ON s.supermarket_id = sp.supermarket_id
             JOIN categories c ON c.category_id = p.category_id
             LEFT JOIN categories pc ON pc.category_id = c.parent_category_id
             WHERE s.name = %s
@@ -323,7 +319,7 @@ async def list_supermarkets() -> list[dict[str, Any]]:
                COUNT(sp.store_product_id) AS product_count,
                MIN(sp.first_seen_at) AS earliest_data,
                MAX(sp.last_seen_at) AS latest_data
-        FROM stores s
+        FROM supermarkets s
         LEFT JOIN store_products sp ON sp.supermarket_id = s.supermarket_id
         GROUP BY s.supermarket_id, s.name
         ORDER BY s.name

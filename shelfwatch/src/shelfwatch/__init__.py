@@ -1,1 +1,0 @@
-"""Shelfwatch MCP server package."""
