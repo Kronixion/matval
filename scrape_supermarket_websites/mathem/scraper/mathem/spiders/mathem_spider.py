@@ -101,7 +101,10 @@ class MathemSpider(scrapy.Spider):
 
         if subcategory_slug is None:
             yield from self._discover_subcategories(
-                response.url, blocks_data or pages_data, build_id, category_slug,
+                response.url,
+                blocks_data or pages_data,
+                build_id,
+                category_slug,
             )
             return
 

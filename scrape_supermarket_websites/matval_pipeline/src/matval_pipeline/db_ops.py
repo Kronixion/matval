@@ -3,9 +3,9 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from matval_core.db.connector import PostgresConnector
 from psycopg import sql
 
-from matval_core.db.connector import PostgresConnector
 from .normalizers import normalize_availability, normalize_currency, normalize_float
 
 LOOKUP_ID_COLUMNS = {
@@ -16,7 +16,6 @@ LOOKUP_ID_COLUMNS = {
 
 
 class DBOps:
-
     def __init__(self, connector: PostgresConnector) -> None:
         self._conn = connector
         self._supermarket_cache: dict[str, int] = {}
@@ -116,11 +115,14 @@ class DBOps:
                         UNION ALL
                         SELECT {id_column} FROM {table} WHERE {column} = %s
                         LIMIT 1""").format(
-                            table = sql.Identifier(table),
-                            column = sql.Identifier(column),
-                            id_column = sql.Identifier(id_column),
-                        )
-        row = self._conn.sql_query(query,(value, value),)
+            table=sql.Identifier(table),
+            column=sql.Identifier(column),
+            id_column=sql.Identifier(id_column),
+        )
+        row = self._conn.sql_query(
+            query,
+            (value, value),
+        )
         lid = int(row[0][id_column])
         self._lookup_cache[key] = lid
         return lid

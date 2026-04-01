@@ -11,6 +11,7 @@ _config_path = os.path.join(str(os.getenv("MATVAL_CONFIG_DIR")), "currency_alias
 with open(_config_path) as config_file:
     CURRENCY_MAP = json.load(config_file)
 
+
 def normalize_float(value: Any) -> float | None:
     if value is None:
         return None
@@ -22,6 +23,7 @@ def normalize_float(value: Any) -> float | None:
     except ValueError:
         return None
 
+
 def normalize_currency(value: Any) -> str | None:
     if value is None:
         return None
@@ -30,6 +32,7 @@ def normalize_currency(value: Any) -> str | None:
         return value_str
     result = CURRENCY_MAP.get(value_str)
     return result if result is not None else None
+
 
 def normalize_availability(value: Any) -> str | None:
     if value is None:

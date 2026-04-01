@@ -4,16 +4,15 @@ import logging
 from typing import Any
 
 from itemadapter import ItemAdapter
-
 from matval_core.db.config import PostgresConfig
 from matval_core.db.connector import PostgresConnector
+
 from .db_ops import DBOps
 
 _LOG = logging.getLogger(__name__)
 
 
 class PostgresPipeline:
-
     def __init__(self, store_name: str) -> None:
         self.store_name = store_name
         self.supermarket_id: int | None = None
@@ -47,9 +46,7 @@ class PostgresPipeline:
             raise RuntimeError("Pipeline not properly initialized")
 
         try:
-            category_id = self._ops.get_or_create_category(
-                adapter.get("subcategory"), adapter.get("category")
-            )
+            category_id = self._ops.get_or_create_category(adapter.get("subcategory"), adapter.get("category"))
             product_id = self._ops.get_or_create_product(name, category_id)
             self._ops.upsert_store_product(
                 self.supermarket_id,

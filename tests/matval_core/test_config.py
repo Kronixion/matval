@@ -6,8 +6,8 @@ from matval_core.db.config import PostgresConfig
 
 
 def test_from_env_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delenv("POSTGRES_HOST", raising=False)                                                             
-    monkeypatch.delenv("POSTGRES_PORT", raising=False)                                                           
+    monkeypatch.delenv("POSTGRES_HOST", raising=False)
+    monkeypatch.delenv("POSTGRES_PORT", raising=False)
     monkeypatch.delenv("POSTGRES_DB", raising=False)
     monkeypatch.delenv("POSTGRES_USER", raising=False)
     monkeypatch.delenv("POSTGRES_PASSWORD", raising=False)
@@ -18,6 +18,7 @@ def test_from_env_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
     assert cfg.dbname == "supermarket_items"
     assert cfg.user == "postgres"
     assert cfg.password == ""
+
 
 def test_from_env_reads_env_vars(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("POSTGRES_HOST", "192.168.0.10")
@@ -31,7 +32,7 @@ def test_from_env_reads_env_vars(monkeypatch: pytest.MonkeyPatch) -> None:
     assert cfg.port == 5433
     assert cfg.dbname == "grocery_items"
     assert cfg.user == "grocery_user"
-    assert cfg.password == "grocery_password" #noqa: S105, dummy password
+    assert cfg.password == "grocery_password"  # noqa: S105, dummy password
 
 
 def test_to_connection_kwargs_includes_options() -> None:

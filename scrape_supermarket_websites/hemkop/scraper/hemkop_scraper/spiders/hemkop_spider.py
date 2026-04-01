@@ -69,9 +69,7 @@ class HemkopSpider(scrapy.Spider):
     }
 
     _HEADERS = {
-        "User-Agent": (
-            "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:143.0) Gecko/20100101 Firefox/143.0"
-        ),
+        "User-Agent": ("Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:143.0) Gecko/20100101 Firefox/143.0"),
         "Accept": "application/json, text/plain, */*",
         "Accept-Language": "en-US,en;q=0.5",
         "X-Requested-With": "XMLHttpRequest",
@@ -271,9 +269,7 @@ class HemkopSpider(scrapy.Spider):
 
     @staticmethod
     def _build_nutrition(detail: dict[str, Any], listing: dict[str, Any]) -> dict[str, Any] | None:
-        nutrition_description = detail.get("nutritionDescription") or listing.get(
-            "nutritionDescription"
-        )
+        nutrition_description = detail.get("nutritionDescription") or listing.get("nutritionDescription")
         fact_list = detail.get("nutritionsFactList") or listing.get("nutritionsFactList")
         nutrient_headers = detail.get("nutrientHeaders") or []
 

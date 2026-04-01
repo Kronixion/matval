@@ -14,7 +14,6 @@ from matval_core.db.config import PostgresConfig
 
 
 class PostgresConnector:
-
     def __init__(
         self,
         config: PostgresConfig | None = None,

@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
 @dataclass(frozen=True, slots=True)
 class PostgresConfig:
     """DB connection settings, read from environment variables."""
@@ -23,11 +24,11 @@ class PostgresConfig:
     @classmethod
     def from_env(cls) -> PostgresConfig:
         return cls(
-            host = os.getenv("POSTGRES_HOST", "localhost"),
-            port = int(os.getenv("POSTGRES_PORT", "5432")),
-            dbname = os.getenv("POSTGRES_DB", "supermarket_items"),
-            user = os.getenv("POSTGRES_USER", "postgres"),
-            password = os.getenv("POSTGRES_PASSWORD", "")
+            host=os.getenv("POSTGRES_HOST", "localhost"),
+            port=int(os.getenv("POSTGRES_PORT", "5432")),
+            dbname=os.getenv("POSTGRES_DB", "supermarket_items"),
+            user=os.getenv("POSTGRES_USER", "postgres"),
+            password=os.getenv("POSTGRES_PASSWORD", ""),
         )
 
     def to_connection_kwargs(self) -> Mapping[str, Any]:

@@ -30,9 +30,7 @@ class CoopSpider(scrapy.Spider):
     name = "coop"
     allowed_domains = ["coop.se", "external.api.coop.se"]
 
-    personalization_endpoint = (
-        "https://external.api.coop.se/personalization/search/entities/by-attribute"
-    )
+    personalization_endpoint = "https://external.api.coop.se/personalization/search/entities/by-attribute"
 
     device = "desktop"
     store_id = "251300"
@@ -66,8 +64,7 @@ class CoopSpider(scrapy.Spider):
         mapping_path = Path(__file__).resolve().parents[1] / "data" / "coop_category_ids.json"
         if not mapping_path.exists():
             raise FileNotFoundError(
-                "Category mapping JSON not found: "
-                f"{mapping_path}. Ensure HAR extraction ran successfully."
+                f"Category mapping JSON not found: {mapping_path}. Ensure HAR extraction ran successfully."
             )
         with mapping_path.open(encoding="utf-8") as handle:
             data = json.load(handle)
@@ -202,9 +199,7 @@ class CoopSpider(scrapy.Spider):
             "Referer": "https://www.coop.se/",
         }
 
-    def _resolve_categories(
-        self, product: dict[str, Any]
-    ) -> tuple[str | None, str | None, str | None]:
+    def _resolve_categories(self, product: dict[str, Any]) -> tuple[str | None, str | None, str | None]:
         nav_categories = product.get("navCategories") or []
         if not nav_categories:
             return None, None, None
@@ -313,12 +308,10 @@ class CoopSpider(scrapy.Spider):
         if not request.full_url.startswith("https://"):
             raise ValueError("Only HTTPS URLs are premitted.")
 
-        with urllib.request.urlopen(request) as response: # noqa: S310 - URL is validated against https
+        with urllib.request.urlopen(request) as response:  # noqa: S310 - URL is validated against https
             html = response.read().decode("utf-8", errors="ignore")
 
-        match = re.search(
-            r"\"personalizationApiSubscriptionKey\"\s*:\s*\"([0-9a-fA-F]{32})\"", html
-        )
+        match = re.search(r"\"personalizationApiSubscriptionKey\"\s*:\s*\"([0-9a-fA-F]{32})\"", html)
         if not match:
             raise ValueError(
                 "Unable to automatically determine Coop subscription key. "
@@ -338,9 +331,6 @@ class CoopSpider(scrapy.Spider):
         if not product_id or not name:
             return None
 
-        slug = (
-            self.category_id_to_slug.get(str(product.get("navCategories", [{}])[0].get("code")))
-            or fallback_slug
-        )
+        slug = self.category_id_to_slug.get(str(product.get("navCategories", [{}])[0].get("code"))) or fallback_slug
         sanitized_name = "-".join(name.lower().split())
         return f"https://www.coop.se/handla/varor{slug}/{sanitized_name}-{product_id}"

@@ -67,8 +67,7 @@ mcp = FastMCP("shelfwatch")
 
 
 _transport = cast(
-    Literal["stdio", "sse", "streamable-http"], 
-    os.getenv("SHELFWATCH_MCP_TRANSPORT", "streamable_http").strip().lower()
+    Literal["stdio", "sse", "streamable-http"], os.getenv("SHELFWATCH_MCP_TRANSPORT", "streamable_http").strip().lower()
 )
 _host = os.getenv("SHELFWATCH_MCP_HOST")
 _port_raw = os.getenv("SHELFWATCH_MCP_PORT")
@@ -95,11 +94,10 @@ def _normalize_params(params: Mapping[str, Any] | Iterable[Any] | None) -> Any |
 def _rows_to_dicts(rows: list[Any]) -> list[dict[str, Any]]:
     return [dict(row) for row in rows]
 
-#Start of MCP Tools
+
+# Start of MCP Tools
 @mcp.tool()
-async def execute_query(
-    sql: str, params: Mapping[str, Any] | Iterable[Any] | None = None
-) -> list[dict[str, Any]]:
+async def execute_query(sql: str, params: Mapping[str, Any] | Iterable[Any] | None = None) -> list[dict[str, Any]]:
     """Execute a raw SQL query — escape hatch for complex queries not covered by the other tools.
 
     Database schema (all in the public schema of supermarket_items):
@@ -131,9 +129,7 @@ async def execute_query(
 
 
 @mcp.tool()
-async def search_products(
-    keyword: str, store_name: str | None = None, limit: int = 20
-) -> list[dict[str, Any]]:
+async def search_products(keyword: str, store_name: str | None = None, limit: int = 20) -> list[dict[str, Any]]:
     """Search for products by keyword across all stores (or a specific store).
 
     Returns product name, store, price, URL, and category.
@@ -249,9 +245,7 @@ async def get_products_in_category(
 
 
 @mcp.tool()
-async def get_product_details(
-    product_name: str, store_name: str | None = None
-) -> list[dict[str, Any]]:
+async def get_product_details(product_name: str, store_name: str | None = None) -> list[dict[str, Any]]:
     """Get full details for a product: price, unit pricing, nutrition, availability."""
 
     sql = """
@@ -351,9 +345,7 @@ async def get_cheapest(keyword: str, limit: int = 10) -> list[dict[str, Any]]:
 
 
 @mcp.tool()
-async def get_price_history(
-    product_name: str, store_name: str | None = None, days: int = 30
-) -> list[dict[str, Any]]:
+async def get_price_history(product_name: str, store_name: str | None = None, days: int = 30) -> list[dict[str, Any]]:
     """Get price and availability history for a product.
 
     Returns historical price/availability changes recorded by the database
@@ -392,8 +384,9 @@ class ConnectorLifespan(AbstractAsyncContextManager[None]):
     async def __aenter__(self) -> None:
         return None
 
-    async def __aexit__(self, exc_type: type[BaseException] | None,
-                         exc: BaseException | None, tb: TracebackType | None) -> None:
+    async def __aexit__(
+        self, exc_type: type[BaseException] | None, exc: BaseException | None, tb: TracebackType | None
+    ) -> None:
         _LOG.info("Closing Postgres connector")
         _connector.close()
 
