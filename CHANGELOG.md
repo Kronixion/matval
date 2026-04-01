@@ -1,3 +1,9 @@
+## v0.6.0 (2026-04-01)
+
+### Feat
+
+- Added tests for shelfwatch, modified matval_core tests.
+
 ## v0.5.1 (2026-03-19)
 
 ### Fix
