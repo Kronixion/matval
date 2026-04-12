@@ -130,13 +130,13 @@ Tests use [testcontainers](https://testcontainers.com/) to spin up a real Postgr
 ### Code quality
 
 ```bash
-ruff check .
-ruff format .
-mypy .
+uv run ruff check .
+uv run ruff format .
+uv run mypy .
 ```
 
 Pre-commit hooks enforce these checks automatically. Install them with:
 
 ```bash
-pre-commit install
+uv run pre-commit install
 ```

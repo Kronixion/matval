@@ -9,7 +9,6 @@ from shelfwatch.server import (
 
 
 class TestParseOptions:
-    """Test the _parse_options helper function."""
 
     def test_parse_options_with_none(self) -> None:
         result = _parse_options(None)
@@ -33,7 +32,6 @@ class TestParseOptions:
 
 
 class TestNormalizeParams:
-    """Test the _normalize_params helper function."""
 
     def test_normalize_params_with_none(self) -> None:
         result = _normalize_params(None)
@@ -67,7 +65,6 @@ class TestNormalizeParams:
 
 
 class TestRowsToDicts:
-    """Test the _rows_to_dicts helper function."""
 
     def test_rows_to_dicts_converts_row_objects(self) -> None:
         rows = [{"id": 1, "name": "Alice"}, {"id": 2, "name": "Bob"}]
@@ -80,7 +77,6 @@ class TestRowsToDicts:
 
 
 class TestLoadConfig:
-    """Test the load_config function."""
 
     def test_load_config_returns_config(self) -> None:
         config = load_config()

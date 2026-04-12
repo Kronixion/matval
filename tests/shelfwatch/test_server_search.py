@@ -10,7 +10,6 @@ from shelfwatch.server import (
 
 
 class TestExecuteQuery:
-    """Test the execute_query tool."""
 
     def test_execute_query_basic_select(self, seed_data: None) -> None:
         result = asyncio.run(execute_query("SELECT 1 AS value"))
@@ -41,7 +40,6 @@ class TestExecuteQuery:
 
 
 class TestSearchProducts:
-    """Test the search_products tool."""
 
     def test_search_products_basic(self, seed_data: None) -> None:
         result = asyncio.run(search_products("juice"))
@@ -86,7 +84,6 @@ class TestSearchProducts:
 
 
 class TestGetCheapest:
-    """Test the get_cheapest tool."""
 
     def test_get_cheapest_basic(self, seed_data: None) -> None:
         result = asyncio.run(get_cheapest("juice"))
@@ -121,7 +118,6 @@ class TestGetCheapest:
 
 
 class TestAsyncExecution:
-    """Test async execution of tools."""
 
     def test_multiple_concurrent_queries(self, seed_data: None) -> None:
         async def run_concurrent() -> None:

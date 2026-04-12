@@ -9,7 +9,6 @@ from shelfwatch.server import (
 
 
 class TestGetProductDetails:
-    """Test the get_product_details tool."""
 
     def test_get_product_details_basic(self, seed_data: None) -> None:
         result = asyncio.run(get_product_details("milk"))
@@ -66,7 +65,6 @@ class TestGetProductDetails:
 
 
 class TestGetNutrition:
-    """Test the get_nutrition tool."""
 
     def test_get_nutrition_basic(self, seed_data: None) -> None:
         result = asyncio.run(get_nutrition("juice"))
@@ -95,7 +93,6 @@ class TestGetNutrition:
 
 
 class TestGetProductsInCategory:
-    """Test the get_products_in_category tool."""
 
     def test_get_products_in_category_basic(self, seed_data: None) -> None:
         result = asyncio.run(get_products_in_category("beverage"))
