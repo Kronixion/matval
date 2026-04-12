@@ -1,3 +1,9 @@
+## v0.7.0 (2026-04-12)
+
+### Feat
+
+- Fix ICA scraper, product variant deduplication, and added a README file.
+
 ## v0.6.0 (2026-04-01)
 
 ### Feat
