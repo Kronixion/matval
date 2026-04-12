@@ -8,6 +8,7 @@ RUN uv pip install --system --no-cache /app/matval_core/
 
 # Install shelfwatch
 COPY shelfwatch/ /app/shelfwatch/
+ENV UV_NO_SOURCES=1
 RUN uv pip install --system --no-cache /app/shelfwatch/
 
 CMD ["shelfwatch"]

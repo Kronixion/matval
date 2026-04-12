@@ -255,6 +255,7 @@ class WillysSpider(scrapy.Spider):
             subcategory=subcategory_name,
             subcategory_slug=subcategory_slug,
             name=name,
+            product_id=code,
             url=f"https://www.willys.se/produkt/{code}",
             price=price,
             unit_price=unit_price,

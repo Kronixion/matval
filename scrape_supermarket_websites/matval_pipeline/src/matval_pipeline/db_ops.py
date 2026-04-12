@@ -168,6 +168,7 @@ class DBOps:
         supermarket_id: int,
         product_id: int,
         *,
+        external_store_sku: str | None = None,
         url: str | None = None,
         price: Any = None,
         unit_price: Any = None,
@@ -202,12 +203,12 @@ class DBOps:
         self._conn.non_sql_query(
             """
             INSERT INTO store_products (
-                supermarket_id, product_id, url, currency_code, price, unit_price,
-                unit_quantity, unit_id, quantity_type_id, availability_status_id,
+                supermarket_id, product_id, external_store_sku, url, currency_code, price,
+                unit_price, unit_quantity, unit_id, quantity_type_id, availability_status_id,
                 nutrition_raw, notes
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (supermarket_id, product_id) DO UPDATE SET
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT ON CONSTRAINT uq_store_products DO UPDATE SET
                 url = EXCLUDED.url,
                 currency_code = EXCLUDED.currency_code,
                 price = EXCLUDED.price,
@@ -223,6 +224,7 @@ class DBOps:
             (
                 supermarket_id,
                 product_id,
+                external_store_sku,
                 url,
                 currency_code,
                 norm_price,

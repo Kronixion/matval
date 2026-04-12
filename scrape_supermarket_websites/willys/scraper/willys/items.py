@@ -22,3 +22,4 @@ class WillysItem(scrapy.Item):
     quantity_type = scrapy.Field()
     nutrition = scrapy.Field()
     availability = scrapy.Field()
+    product_id = scrapy.Field()

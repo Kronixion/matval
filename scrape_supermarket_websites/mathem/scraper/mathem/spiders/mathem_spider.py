@@ -147,6 +147,7 @@ class MathemSpider(scrapy.Spider):
             subcategory=meta.get("subcategory_name"),
             subcategory_slug=meta.get("subcategory"),
             name=base_product.get("fullName"),
+            product_id=base_product.get("absoluteUrl", "").strip("/").split("/")[-1] or None,
             url=urljoin("https://www.mathem.se", base_product.get("absoluteUrl", "")),
             price=base_product.get("grossPrice"),
             unit_price=base_product.get("grossUnitPrice"),

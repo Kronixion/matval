@@ -100,7 +100,7 @@ CREATE TABLE IF NOT EXISTS store_products (
         CHECK (unit_price IS NULL OR unit_price >= 0),
     CONSTRAINT chk_unit_quantity_positive
         CHECK (unit_quantity IS NULL OR unit_quantity > 0),
-    CONSTRAINT uq_store_products UNIQUE (supermarket_id, product_id)
+    CONSTRAINT uq_store_products UNIQUE NULLS NOT DISTINCT (supermarket_id, product_id, external_store_sku)
 );
 
 CREATE TABLE IF NOT EXISTS product_availability_history (

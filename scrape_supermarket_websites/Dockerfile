@@ -8,6 +8,7 @@ RUN uv pip install --system --no-cache /app/matval_core/
 
 # Install matval_pipeline (shared dependency)
 COPY scrape_supermarket_websites/matval_pipeline/ /app/matval_pipeline/
+ENV UV_NO_SOURCES=1
 RUN uv pip install --system --no-cache /app/matval_pipeline/
 
 # Install scraper dependencies (scrapy + beautifulsoup4 for ica)

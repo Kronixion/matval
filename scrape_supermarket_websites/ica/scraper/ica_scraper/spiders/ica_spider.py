@@ -1,4 +1,4 @@
-"""ICA grocery catalogue spider leveraging public JSON APIs."""
+"""ICA grocery catalogue spider — parses __INITIAL_STATE__ from HTML category pages."""
 
 from __future__ import annotations
 
@@ -10,6 +10,7 @@ from collections.abc import Iterable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from typing import Any
+from urllib.parse import quote
 
 import scrapy
 from scrapy import Request
@@ -39,7 +40,7 @@ class IcaSpider(scrapy.Spider):
     allowed_domains = ["handlaprivatkund.ica.se"]
 
     store_id_default = "1003380"
-    api_base = "https://handlaprivatkund.ica.se/stores/{store_id}/api/v6/products"
+    category_base = "https://handlaprivatkund.ica.se/stores/{store_id}/categories/{path}/{category_id}"
     put_base = "https://handlaprivatkund.ica.se/stores/{store_id}/api/webproductpagews/v6/products"
 
     handle_httpstatus_list = [202, 403]
@@ -52,11 +53,8 @@ class IcaSpider(scrapy.Spider):
         "DOWNLOAD_DELAY": 0.5,
         "COOKIES_ENABLED": True,
         "DEFAULT_REQUEST_HEADERS": {
-            "Accept": "application/json, text/plain, */*",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             "Accept-Language": "sv-SE,sv;q=0.9,en;q=0.8",
-            "Origin": "https://handlaprivatkund.ica.se",
-            "Ecom-Request-Source": "web",
-            "Ecom-Request-Source-Version": "1",
             "User-Agent": _BROWSER_UA,
         },
     }
@@ -103,40 +101,44 @@ class IcaSpider(scrapy.Spider):
         self._refresh_session()
 
         for seed in self.root_categories:
-            slug = self._slugify(seed.full_path)
             meta = {
                 "category_id": seed.identifier,
+                "full_url_path": seed.full_path,
                 "category_chain": [
                     {
                         "id": seed.identifier,
                         "name": seed.name,
-                        "slug": slug,
                     }
                 ],
             }
-            yield self._build_category_request(seed.identifier, slug, meta)
+            yield self._build_category_request(seed.identifier, seed.full_path, meta)
 
     def _build_category_request(
         self,
         category_id: str,
-        slug: str,
+        full_url_path: str,
         meta: dict[str, Any],
+        page_token: str | None = None,
         dont_filter: bool = False,
     ) -> Request:
-        url = self.api_base.format(store_id=self.store_id)
-        url = f"{url}?category={category_id}"
+        encoded_path = quote(full_url_path, safe="/")
+        url = self.category_base.format(
+            store_id=self.store_id,
+            path=encoded_path,
+            category_id=category_id,
+        )
+        if page_token:
+            url = f"{url}?pageToken={page_token}"
 
         self._maybe_refresh_session()
-        headers = self._request_headers(slug, category_id)
         cookies = self._auth_cookies()
 
         return Request(
             url,
-            headers=headers,
             cookies=cookies,
             meta=meta,
             callback=self.parse_category,
-            dont_filter=dont_filter,
+            dont_filter=dont_filter or page_token is not None,
         )
 
     def _build_product_batch_request(
@@ -187,65 +189,70 @@ class IcaSpider(scrapy.Spider):
             self._refresh_session()
             meta = response.meta.copy()
             category_id = meta.get("category_id")
-            chain = meta.get("category_chain", [])
-            slug = chain[-1]["slug"] if chain else ""
-            new_meta = {
-                "category_id": category_id,
-                "category_chain": chain,
-                "waf_retries": retries + 1,
-            }
+            full_url_path = meta.get("full_url_path", "")
             if category_id is None:
                 return
-            yield self._build_category_request(category_id, slug, new_meta, dont_filter=True)
+            new_meta = {**meta, "waf_retries": retries + 1}
+            yield self._build_category_request(category_id, full_url_path, new_meta, dont_filter=True)
             return
 
+        # Parse __INITIAL_STATE__ embedded in the HTML
+        idx = response.text.find("window.__INITIAL_STATE__=")
+        if idx < 0:
+            self.logger.error("No __INITIAL_STATE__ found in %s", response.url)
+            return
+        json_start = idx + len("window.__INITIAL_STATE__=")
+        script_end = response.text.find("</script>", json_start)
+        json_str = response.text[json_start:script_end].rstrip(";").strip()
         try:
-            payload = json.loads(response.text)
+            state = json.loads(json_str)
         except json.JSONDecodeError as exc:
-            self.logger.error("Failed to decode JSON for %s: %s", response.url, exc)
+            self.logger.error("Failed to parse __INITIAL_STATE__ for %s: %s", response.url, exc)
             return
 
-        result = payload.get("result") or {}
-        entities = payload.get("entities") or {}
-        products = entities.get("product") or {}
-
+        catalogue = state.get("data", {}).get("products", {}).get("catalogue", {}).get("data", {})
         category_chain = response.meta.get("category_chain", [])
+        full_url_path = response.meta.get("full_url_path", "")
+        category_id = response.meta.get("category_id", "")
 
         # Discover subcategories
-        for subcategory in result.get("categories", []):
-            sub_id = subcategory.get("id")
+        for subcat in catalogue.get("categories", []):
+            sub_id = subcat.get("id")
             if not sub_id or sub_id in self._visited_categories:
                 continue
             self._visited_categories.add(sub_id)
+            sub_path = subcat.get("fullURLPath") or subcat.get("name") or sub_id
+            new_chain = category_chain + [{"id": sub_id, "name": subcat.get("name")}]
+            yield self._build_category_request(
+                sub_id,
+                sub_path,
+                {"category_id": sub_id, "full_url_path": sub_path, "category_chain": new_chain},
+            )
 
-            slug = self._slugify(subcategory.get("fullURLPath") or subcategory.get("name") or sub_id)
-            new_chain = category_chain + [{"id": sub_id, "name": subcategory.get("name"), "slug": slug}]
-            yield self._build_category_request(sub_id, slug, {"category_id": sub_id, "category_chain": new_chain})
+        # Collect all product IDs from productGroups
+        product_ids = []
+        for group in catalogue.get("productGroups", []):
+            for pid in group.get("products", []):
+                if pid not in self._emitted_product_ids:
+                    product_ids.append(pid)
 
-        # Emit products from entities (first 50)
-        entity_ids = set()
-        for product in products.values():
-            item = self._build_item(product, category_chain)
-            if not item:
-                continue
-            pid = item["product_id"]
-            entity_ids.add(pid)
-            if pid not in self._emitted_product_ids:
-                self._emitted_product_ids.add(pid)
-                yield item
+        # Fetch product details via PUT in batches
+        for i in range(0, len(product_ids), _BATCH_SIZE):
+            batch = product_ids[i : i + _BATCH_SIZE]
+            yield self._build_product_batch_request(batch, category_chain)
 
-        # Fetch remaining products from productGroups via PUT
-        if self._csrf_token:
-            remaining_ids = []
-            for group in result.get("productGroups", []):
-                for pid in group.get("products", []):
-                    if pid not in entity_ids and pid not in self._emitted_product_ids:
-                        remaining_ids.append(pid)
-
-            # Batch into chunks
-            for i in range(0, len(remaining_ids), _BATCH_SIZE):
-                batch = remaining_ids[i : i + _BATCH_SIZE]
-                yield self._build_product_batch_request(batch, category_chain)
+        # Paginate if there are more products
+        next_token = catalogue.get("nextPageToken")
+        fetched_so_far = response.meta.get("fetched_so_far", 0) + len(product_ids)
+        total = catalogue.get("currentCategory", {}).get("productCount", 0)
+        if next_token and fetched_so_far < total:
+            new_meta = {
+                **response.meta,
+                "fetched_so_far": fetched_so_far,
+            }
+            yield self._build_category_request(
+                category_id, full_url_path, new_meta, page_token=next_token
+            )
 
     def parse_product_batch(self, response: TextResponse) -> Iterable[Request | ICAItem]:
         """Parse products returned by the PUT batch endpoint."""
@@ -475,12 +482,6 @@ class IcaSpider(scrapy.Spider):
     def _build_product_url(self, name: str, retailer_id: str) -> str:
         slug = self._slugify(name)
         return f"https://handlaprivatkund.ica.se/stores/{self.store_id}/products/{slug}/{retailer_id}"
-
-    def _request_headers(self, slug: str, category_id: str) -> dict[str, str]:
-        referer = f"https://handlaprivatkund.ica.se/stores/{self.store_id}/categories/{slug}/{category_id}"
-        headers: dict[str, str] = dict(self.custom_settings["DEFAULT_REQUEST_HEADERS"])
-        headers["Referer"] = referer
-        return headers
 
     @staticmethod
     def _slugify(value: str | None) -> str:
