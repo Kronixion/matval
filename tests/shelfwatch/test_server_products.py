@@ -9,7 +9,6 @@ from shelfwatch.server import (
 
 
 class TestGetProductDetails:
-
     def test_get_product_details_basic(self, seed_data: None) -> None:
         result = asyncio.run(get_product_details("milk"))
         assert isinstance(result, list)
@@ -65,7 +64,6 @@ class TestGetProductDetails:
 
 
 class TestGetNutrition:
-
     def test_get_nutrition_basic(self, seed_data: None) -> None:
         result = asyncio.run(get_nutrition("juice"))
         assert len(result) > 0
@@ -93,7 +91,6 @@ class TestGetNutrition:
 
 
 class TestGetProductsInCategory:
-
     def test_get_products_in_category_basic(self, seed_data: None) -> None:
         result = asyncio.run(get_products_in_category("beverage"))
         assert isinstance(result, list)

@@ -250,13 +250,32 @@ class WillysSpider(scrapy.Spider):
             if parts:
                 currency = parts[-1]
 
+        # Extract correct URL and category hierarchy from breadcrumbs
+        breadcrumbs = detail.get("breadcrumbs") or listing.get("breadcrumbs") or []
+        product_url = None
+        for crumb in breadcrumbs:
+            if crumb.get("linkClass") == "active" and crumb.get("url"):
+                raw = crumb["url"]
+                product_url = raw if raw.startswith("http") else f"https://www.willys.se{raw}"
+                break
+        if not product_url:
+            product_url = f"https://www.willys.se/produkt/{code}"
+
+        # Prefer breadcrumb category hierarchy over listing slugs
+        crumb_names = [c["name"] for c in breadcrumbs if c.get("name") and c.get("linkClass") != "active"]
+        if len(crumb_names) >= 2:
+            category_slug = crumb_names[1]  # e.g. "Hälsa & Skönhet"
+        if len(crumb_names) >= 3:
+            subcategory_name = crumb_names[-1]  # deepest non-product crumb
+            subcategory_slug = breadcrumbs[-2].get("url") if len(breadcrumbs) >= 2 else subcategory_slug
+
         return WillysItem(
             category=category_slug,
             subcategory=subcategory_name,
             subcategory_slug=subcategory_slug,
             name=name,
             product_id=code,
-            url=f"https://www.willys.se/produkt/{code}",
+            url=product_url,
             price=price,
             unit_price=unit_price,
             unit_quantity_name=unit_name,

@@ -82,6 +82,12 @@ class MathemSpider(scrapy.Spider):
             Requests for subcategory discovery, pagination, or product detail pages.
         """
 
+        if response.status == 404 or "/_next/data/" in response.url and not response.text.strip().startswith("{"):
+            self.logger.error(
+                "Stale build_id detected for %s — Mathem may have redeployed mid-run; skipping", response.url
+            )
+            return
+
         payload = response.json()
         queries = payload.get("pageProps", {}).get("dehydratedState", {}).get("queries", [])
         if not queries:

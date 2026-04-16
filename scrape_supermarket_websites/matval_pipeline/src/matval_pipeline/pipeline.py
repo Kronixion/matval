@@ -27,14 +27,14 @@ class PostgresPipeline:
             raise ValueError("STORE_NAME must be set in Scrapy settings")
         return cls(store_name)
 
-    def open_spider(self) -> None:
+    def open_spider(self, spider: Any = None) -> None:
         pg_config = PostgresConfig.from_env()
         self._connector = PostgresConnector(config=pg_config, autocommit=False)
         self._ops = DBOps(self._connector)
         self.supermarket_id = self._ops.get_or_create_supermarket(self.store_name)
         _LOG.info("PostgresPipeline opened for store=%s (id=%d)", self.store_name, self.supermarket_id)
 
-    def process_item(self, item: Any) -> Any:
+    def process_item(self, item: Any, spider: Any = None) -> Any:
         adapter = ItemAdapter(item)
 
         name = adapter.get("name")
@@ -74,7 +74,7 @@ class PostgresPipeline:
 
         return item
 
-    def close_spider(self) -> None:
+    def close_spider(self, spider: Any = None) -> None:
         if self._connector is not None:
             try:
                 self._connector.connection.commit()

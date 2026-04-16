@@ -77,6 +77,14 @@ strict = true
 module = "scrapy.*"
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = ["testcontainers", "testcontainers.*", "testcontainers.postgres"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "tests.conftest"
+disable_error_code = ["import-untyped"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 

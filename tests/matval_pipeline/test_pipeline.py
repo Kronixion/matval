@@ -99,6 +99,7 @@ def test_close_spider_closes_connector(pg_config: PostgresConfig, apply_schema: 
 
     p.close_spider(None)
 
+    assert p._connector._connection is not None
     assert p._connector._connection.closed
 
 

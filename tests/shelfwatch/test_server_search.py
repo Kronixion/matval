@@ -1,5 +1,6 @@
 # ruff: noqa: S101, PT009
 import asyncio
+from typing import Any
 
 from shelfwatch.server import (
     execute_query,
@@ -10,7 +11,6 @@ from shelfwatch.server import (
 
 
 class TestExecuteQuery:
-
     def test_execute_query_basic_select(self, seed_data: None) -> None:
         result = asyncio.run(execute_query("SELECT 1 AS value"))
         assert len(result) == 1
@@ -40,7 +40,6 @@ class TestExecuteQuery:
 
 
 class TestSearchProducts:
-
     def test_search_products_basic(self, seed_data: None) -> None:
         result = asyncio.run(search_products("juice"))
         assert isinstance(result, list)
@@ -84,7 +83,6 @@ class TestSearchProducts:
 
 
 class TestGetCheapest:
-
     def test_get_cheapest_basic(self, seed_data: None) -> None:
         result = asyncio.run(get_cheapest("juice"))
         assert len(result) > 0
@@ -118,15 +116,14 @@ class TestGetCheapest:
 
 
 class TestAsyncExecution:
-
     def test_multiple_concurrent_queries(self, seed_data: None) -> None:
-        async def run_concurrent() -> None:
+        async def run_concurrent() -> list[Any]:
             results = await asyncio.gather(
                 search_products("juice"),
                 search_products("milk"),
                 get_categories(),
             )
-            return results
+            return list(results)
 
         results = asyncio.run(run_concurrent())
         assert len(results) == 3

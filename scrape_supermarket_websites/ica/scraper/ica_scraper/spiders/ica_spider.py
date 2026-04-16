@@ -21,6 +21,8 @@ from ica_scraper.items import ICAItem
 _BATCH_SIZE = 50
 _WAF_TOKEN_TTL = 240  # seconds before proactive refresh (token lasts ~5 min)
 _MAX_WAF_RETRIES = 3
+_MAX_REFRESH_FAILURES = 5  # give up and close spider after this many consecutive failures
+_REFRESH_COOLDOWN = 30  # seconds to wait between refresh attempts after a failure
 _BROWSER_UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
 
 
@@ -90,12 +92,14 @@ class IcaSpider(scrapy.Spider):
     def __init__(self, *args: Any, store_id: str | None = None, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.store_id = store_id or self.store_id_default
-        self._visited_categories: set[str] = set()
+        self._visited_categories: set[str] = {seed.identifier for seed in self.root_categories}
         self._emitted_product_ids: set[str] = set()
         self._waf_token: str | None = None
         self._csrf_token: str | None = None
         self._session_cookies: dict[str, str] = {}
         self._token_obtained_at: float = 0
+        self._last_refresh_attempt: float = 0
+        self._consecutive_refresh_failures: int = 0
 
     def start_requests(self) -> Iterable[Request]:
         self._refresh_session()
@@ -216,12 +220,20 @@ class IcaSpider(scrapy.Spider):
         category_id = response.meta.get("category_id", "")
 
         # Discover subcategories
-        for subcat in catalogue.get("categories", []):
+        subcats = catalogue.get("categories", [])
+
+        for subcat in subcats:
             sub_id = subcat.get("id")
             if not sub_id or sub_id in self._visited_categories:
                 continue
             self._visited_categories.add(sub_id)
-            sub_path = subcat.get("fullURLPath") or subcat.get("name") or sub_id
+            # Build full path as parent/child so the URL is always valid
+            api_path = subcat.get("fullURLPath") or ""
+            if "/" in api_path:
+                sub_path = api_path  # already a full path from the API
+            else:
+                slug = api_path or self._slugify(subcat.get("name") or sub_id)
+                sub_path = f"{full_url_path}/{slug}"
             new_chain = category_chain + [{"id": sub_id, "name": subcat.get("name")}]
             yield self._build_category_request(
                 sub_id,
@@ -236,23 +248,18 @@ class IcaSpider(scrapy.Spider):
                 if pid not in self._emitted_product_ids:
                     product_ids.append(pid)
 
+        if not subcats and not product_ids:
+            self.logger.warning("Category %s returned 0 subcategories and 0 products — UUID may be stale", category_id)
+
         # Fetch product details via PUT in batches
         for i in range(0, len(product_ids), _BATCH_SIZE):
             batch = product_ids[i : i + _BATCH_SIZE]
             yield self._build_product_batch_request(batch, category_chain)
 
-        # Paginate if there are more products
+        # Paginate whenever a nextPageToken is present
         next_token = catalogue.get("nextPageToken")
-        fetched_so_far = response.meta.get("fetched_so_far", 0) + len(product_ids)
-        total = catalogue.get("currentCategory", {}).get("productCount", 0)
-        if next_token and fetched_so_far < total:
-            new_meta = {
-                **response.meta,
-                "fetched_so_far": fetched_so_far,
-            }
-            yield self._build_category_request(
-                category_id, full_url_path, new_meta, page_token=next_token
-            )
+        if next_token:
+            yield self._build_category_request(category_id, full_url_path, response.meta.copy(), page_token=next_token)
 
     def parse_product_batch(self, response: TextResponse) -> Iterable[Request | ICAItem]:
         """Parse products returned by the PUT batch endpoint."""
@@ -347,7 +354,12 @@ class IcaSpider(scrapy.Spider):
 
     def _maybe_refresh_session(self) -> None:
         """Proactively refresh session if the WAF token is about to expire."""
+        if self._consecutive_refresh_failures >= _MAX_REFRESH_FAILURES:
+            return  # circuit breaker open — spider will close itself on next failure check
+        since_last = time.monotonic() - self._last_refresh_attempt
         if not self._waf_token:
+            if since_last < _REFRESH_COOLDOWN:
+                return  # cooldown: don't hammer Playwright on repeated failures
             self._refresh_session()
             return
         elapsed = time.monotonic() - self._token_obtained_at
@@ -416,6 +428,7 @@ class IcaSpider(scrapy.Spider):
 
             return waf_token, csrf, session_cookies
 
+        self._last_refresh_attempt = time.monotonic()
         try:
             with ThreadPoolExecutor(max_workers=1) as pool:
                 waf_token, csrf, session_cookies = pool.submit(_run).result(timeout=60)
@@ -424,6 +437,7 @@ class IcaSpider(scrapy.Spider):
             self._csrf_token = csrf
             self._session_cookies = session_cookies
             self._token_obtained_at = time.monotonic()
+            self._consecutive_refresh_failures = 0  # reset on success
 
             if waf_token:
                 self.logger.info("Obtained WAF token (%d chars)", len(waf_token))
@@ -436,7 +450,17 @@ class IcaSpider(scrapy.Spider):
                 self.logger.warning("Failed to obtain CSRF token; PUT batching disabled")
 
         except Exception as exc:
-            self.logger.error("Failed to refresh session: %s", exc)
+            self._consecutive_refresh_failures += 1
+            self.logger.error(
+                "Failed to refresh session (%d/%d): %s",
+                self._consecutive_refresh_failures,
+                _MAX_REFRESH_FAILURES,
+                exc,
+            )
+            if self._consecutive_refresh_failures >= _MAX_REFRESH_FAILURES:
+                self.logger.error("Max session refresh failures reached — closing spider")
+                if self.crawler.engine is not None:
+                    self.crawler.engine.close_spider(self, "waf_refresh_failed")
 
     @staticmethod
     def _extract_price(price_info: dict[str, Any]) -> str | None:

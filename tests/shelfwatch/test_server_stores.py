@@ -8,7 +8,6 @@ from shelfwatch.server import (
 
 
 class TestListSupermarkets:
-
     def test_list_supermarkets_returns_all(self, seed_data: None) -> None:
         result = asyncio.run(list_supermarkets())
         assert len(result) > 0
@@ -35,7 +34,6 @@ class TestListSupermarkets:
 
 
 class TestGetCategories:
-
     def test_get_categories_all(self, seed_data: None) -> None:
         result = asyncio.run(get_categories())
         assert len(result) > 0
