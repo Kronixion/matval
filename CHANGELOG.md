@@ -1,3 +1,9 @@
+## v0.7.1 (2026-04-16)
+
+### Fix
+
+- Fix scraper URLs, ICA scraper WAF loop, subcategory paths, and type errors.
+
 ## v0.7.0 (2026-04-12)
 
 ### Feat
